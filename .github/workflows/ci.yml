@@ -23,20 +23,33 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
 
-  test:
-    name: Test (${{ matrix.os }})
+  test-linux:
+    name: Full test suite (ubuntu-latest)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install minimum supported Rust toolchain
+        run: rustup toolchain install 1.98.0 --profile minimal
+      - name: Run full test suite
+        run: cargo test --locked --all-targets
+
+  portable-provider:
+    name: Provider protocol (${{ matrix.os }})
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
       - name: Install minimum supported Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal
-      - name: Run tests
-        run: cargo test --locked --all-targets
+      - name: Run response conformance fixtures
+        run: cargo test --locked --lib external_provider::conformance_tests
+      - name: Run native provider process contract
+        run: cargo test --locked --test provider_process_portable
 
   audit:
     name: Dependency audit

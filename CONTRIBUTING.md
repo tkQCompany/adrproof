@@ -22,8 +22,10 @@ explicit authority boundaries, and reviewable evidence as product requirements.
    cargo audit --deny warnings
    ```
 
-CI repeats the test suite on Linux, macOS, and Windows with Rust 1.98.0, the
-minimum supported Rust version.
+CI runs the full regression suite on Linux and the portable response/process
+conformance suite on macOS and Windows, all with Rust 1.98.0, the minimum
+supported Rust version. Tests that intentionally depend on Unix shell tools are
+not used to claim Windows portability.
 
 ## AI-assisted contributions
 

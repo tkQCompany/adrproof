@@ -148,10 +148,12 @@ Language-neutral accepted and rejected outputs live in
 
 ## Platform support
 
-Protocol and response conformance tests run on Linux, macOS, and Windows using
-the minimum supported Rust toolchain. Process execution details necessarily use
-platform facilities. A platform failure to terminate or reap a provider is an
-execution error and can never produce PASS.
+Response conformance and a native Rust provider process fixture run on Linux,
+macOS, and Windows using the minimum supported Rust toolchain. The full historic
+regression suite runs on Linux; shell-dependent tests are not used to claim
+Windows portability. Process execution details necessarily use platform
+facilities. A platform failure to terminate or reap a provider is an execution
+error and can never produce PASS.
 
 Provider executables must be native executable files for the host. A script
 with a Unix shebang is not a portable Windows executable; a cross-platform
