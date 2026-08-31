@@ -33,10 +33,14 @@ English is the canonical language for normative documentation. See
 - [`RUST_QUINT_CORRESPONDENCE.md`](RUST_QUINT_CORRESPONDENCE.md)
 - [`SQL_MIGRATION_FACT_PROVIDER.md`](SQL_MIGRATION_FACT_PROVIDER.md)
 - [`EXTERNAL_PROVIDER_PROTOCOL.md`](EXTERNAL_PROVIDER_PROTOCOL.md)
+- [`WRITING_EXTERNAL_PROVIDERS.md`](WRITING_EXTERNAL_PROVIDERS.md)
+- [`MIGRATING_FACT_PROVIDERS.md`](MIGRATING_FACT_PROVIDERS.md)
+- [`VERSIONING.md`](VERSIONING.md)
 
 ## Project context
 
 - [`MILESTONE_2_BASELINE.md`](MILESTONE_2_BASELINE.md)
+- [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
 - [`landscape.md`](landscape.md)
 
 Customer- or project-specific pilot reports are not part of the initial public

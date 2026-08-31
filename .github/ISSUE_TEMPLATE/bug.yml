@@ -1,0 +1,35 @@
+name: Bug report
+description: Report reproducible incorrect ADRProof behavior
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: Do not include credentials, customer code, or private evidence.
+  - type: input
+    id: version
+    attributes:
+      label: ADRProof version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal neutral reproduction
+      description: Include commands, expected result, and actual result.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Rust version, backend/provider versions, and relevant configuration.
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Public-data confirmation
+      options:
+        - label: This report contains no credentials, customer code, or private evidence.
+          required: true

@@ -21,3 +21,9 @@ details.
 
 Security reports will be acknowledged as soon as practical. Response and release
 timelines depend on severity, reproducibility, and maintainer availability.
+
+## Running external providers
+
+Only configure providers whose code and distribution you trust. ADRProof
+validates and bounds their protocol but does not sandbox filesystem, network, or
+system access. Run untrusted provider code in a separate OS/container sandbox.

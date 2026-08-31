@@ -7,13 +7,32 @@ fn main() {
     let code = match real_main() {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("ERROR — {e}");
+            let arguments = std::env::args().collect::<Vec<_>>();
+            let provider_json_requested = arguments.get(1).map(String::as_str) == Some("provider")
+                && arguments.iter().any(|argument| argument == "--json");
+            if let Error::ExternalProviderFailure { code, message } = &e
+                && provider_json_requested
+            {
+                eprintln!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "schema_version": adrproof::external_provider::CHECK_REPORT_SCHEMA_VERSION,
+                        "protocol": adrproof::external_provider::PROTOCOL_VERSION,
+                        "result": "ERROR",
+                        "exit_code": 6,
+                        "diagnostics": [{"code": code, "message": message}],
+                    }))
+                    .expect("external provider error report serialization")
+                );
+            } else {
+                eprintln!("ERROR — {e}");
+            }
             match e {
                 Error::Timeout(_) => 4,
                 Error::SolverMissing(_) | Error::SolverVersion { .. } | Error::SolverFailure(_) => {
                     5
                 }
-                Error::ProviderFailure(_) => 6,
+                Error::ProviderFailure(_) | Error::ExternalProviderFailure { .. } => 6,
                 Error::Io { .. } | Error::Diagnostic { .. } | Error::InvalidReference { .. } => 2,
             }
         }
@@ -1306,17 +1325,19 @@ fn facts(roots: &VerificationRoots, json: bool, summary: bool) -> Result<i32, Er
 
 fn provider_command(roots: &VerificationRoots, cli: &Cli) -> Result<i32, Error> {
     if cli.provider_action.as_deref() != Some("check") {
-        return Err(Error::ProviderFailure(
-            "usage: adrproof provider check [PROVIDER-ID] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]".into(),
-        ));
+        return Err(Error::ExternalProviderFailure {
+            code: adrproof::external_provider::DIAGNOSTIC_CONFIGURATION,
+            message: "usage: adrproof provider check [PROVIDER-ID] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]".into(),
+        });
     }
     let runs = adrproof::external_provider::run_selected(roots, cli.provider_id.as_deref())?;
     if runs.is_empty() {
-        return Err(Error::ProviderFailure(
-            "no external providers are configured".into(),
-        ));
+        return Err(Error::ExternalProviderFailure {
+            code: adrproof::external_provider::DIAGNOSTIC_CONFIGURATION,
+            message: "no external providers are configured".into(),
+        });
     }
-    let report = runs
+    let providers = runs
         .iter()
         .map(|run| {
             serde_json::json!({
@@ -1333,9 +1354,16 @@ fn provider_command(roots: &VerificationRoots, cli: &Cli) -> Result<i32, Error> 
         })
         .collect::<Vec<_>>();
     if cli.json {
+        let report = serde_json::json!({
+            "schema_version": adrproof::external_provider::CHECK_REPORT_SCHEMA_VERSION,
+            "protocol": adrproof::external_provider::PROTOCOL_VERSION,
+            "result": "PASS",
+            "providers": providers,
+            "diagnostics": [],
+        });
         println!("{}", serde_json::to_string_pretty(&report).unwrap());
     } else {
-        for item in report {
+        for item in providers {
             println!(
                 "{}: PASS ({} facts, {} coverage claims, {} ms)",
                 item["provider"]["id"].as_str().unwrap_or("unknown"),
@@ -1343,6 +1371,17 @@ fn provider_command(roots: &VerificationRoots, cli: &Cli) -> Result<i32, Error> 
                 item["coverage_claims"],
                 item["elapsed_ms"]
             );
+            if cli.summary {
+                for input in item["semantic_inputs"].as_array().into_iter().flatten() {
+                    println!("  input: {}", input.as_str().unwrap_or("<invalid>"));
+                }
+                for diagnostic in item["diagnostics"].as_array().into_iter().flatten() {
+                    println!(
+                        "  diagnostic: {}",
+                        diagnostic.as_str().unwrap_or("<invalid>")
+                    );
+                }
+            }
         }
     }
     Ok(0)

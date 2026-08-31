@@ -1,0 +1,28 @@
+{
+  "schema_version": "adrproof-external-provider-response-v1",
+  "provider": {"id": "fixture", "version": "1.0.0"},
+  "inputs": ["project:component.json"],
+  "artifacts": [{
+    "id": "project:component.json",
+    "kind": "component_manifest",
+    "provenance": {"kind": "deterministically_extracted", "source": "project:component.json", "span": null, "extractor": "fixture-json-v1"}
+  }],
+  "facts": [{
+    "id": "fixture:component:api",
+    "relation": "component",
+    "arguments": ["api"],
+    "value": true,
+    "attributes": {"format": "component-v1"},
+    "provenance": {"kind": "deterministically_extracted", "source": "project:component.json", "span": null, "extractor": "fixture-json-v1"}
+  }],
+  "coverage": [{
+    "relation": "component",
+    "provider": "fixture",
+    "world": "closed",
+    "scope": {"kind": "global"},
+    "qualifiers": {"format": "component-v1"},
+    "statement": "all components in component.json are enumerated",
+    "diagnostics": []
+  }],
+  "diagnostics": []
+}

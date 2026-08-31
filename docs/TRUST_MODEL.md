@@ -30,6 +30,26 @@ the obligation is outside the evaluated scope; and `ERROR` means infrastructure 
 tool execution failed. Only current `PASS` evidence passes CI. Missing evidence,
 UNKNOWN, STALE, malformed output, timeout, version mismatch, and crashes never do.
 
+## External-provider threat model
+
+Configured external providers are trusted executables but may still be buggy,
+misconfigured, compromised, or overconfident. ADRProof therefore treats their
+output as untrusted protocol data: it bounds stdout/stderr and execution time,
+checks exact versions and wire shape, validates logical inputs and provenance,
+and rejects unsupported authority or completeness claims.
+
+These controls protect the verification decision; they are not an operating
+system sandbox. A provider runs with the invoking user's filesystem, network,
+environment, and syscall authority. Projects must independently sandbox code
+they do not trust. Automatic provider download or execution of a command found
+only through `PATH` is outside the 0.2 trust boundary.
+
+Residual risks include a provider modifying files before ADRProof terminates it,
+platform failure to kill descendants, resource consumption below configured
+limits, and deterministic extraction from an incorrect source specification.
+None of these risks is converted into proof authority by a successful process
+exit alone.
+
 Imported native-test evidence trusts the native runner and the deterministic
 adapter that normalizes its output. ADRProof independently checks the declared
 command, working directory, minimum pass count, maximum skips, zero failures,

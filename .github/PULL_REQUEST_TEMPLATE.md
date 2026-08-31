@@ -7,6 +7,8 @@ Describe the problem and the chosen change.
 - [ ] `cargo fmt --all -- --check`
 - [ ] `cargo clippy --locked --all-targets --all-features -- -D warnings`
 - [ ] `cargo test --locked --all-targets`
+- [ ] External-provider conformance fixtures updated when protocol behavior changes
+- [ ] `cargo audit --deny warnings`
 - [ ] Documentation and ADRs updated where required
 - [ ] Material AI assistance disclosed
 - [ ] No credentials, customer code, private evidence, or unapproved integration material included

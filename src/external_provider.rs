@@ -13,6 +13,16 @@ use std::time::{Duration, Instant};
 pub const PROTOCOL_VERSION: &str = "adrproof-external-provider-v1";
 pub const REQUEST_SCHEMA_VERSION: &str = "adrproof-external-provider-request-v1";
 pub const RESPONSE_SCHEMA_VERSION: &str = "adrproof-external-provider-response-v1";
+pub const CHECK_REPORT_SCHEMA_VERSION: &str = "adrproof-provider-check-report-v1";
+pub const DIAGNOSTIC_CONFIGURATION: &str = "ADRP-EXTP-100";
+pub const DIAGNOSTIC_EXECUTION: &str = "ADRP-EXTP-200";
+pub const DIAGNOSTIC_TIMEOUT: &str = "ADRP-EXTP-201";
+pub const DIAGNOSTIC_OUTPUT_LIMIT: &str = "ADRP-EXTP-202";
+pub const DIAGNOSTIC_RESPONSE: &str = "ADRP-EXTP-300";
+pub const DIAGNOSTIC_IDENTITY: &str = "ADRP-EXTP-301";
+pub const DIAGNOSTIC_INPUT: &str = "ADRP-EXTP-400";
+pub const DIAGNOSTIC_AUTHORITY: &str = "ADRP-EXTP-500";
+pub const DIAGNOSTIC_COLLISION: &str = "ADRP-EXTP-600";
 const DEFAULT_TIMEOUT_MS: u64 = 10_000;
 const MAX_TIMEOUT_MS: u64 = 600_000;
 const MAX_OUTPUT_BYTES: usize = 8 * 1024 * 1024;
@@ -87,6 +97,13 @@ struct CapturedStream {
     exceeded_limit: bool,
 }
 
+fn failure(code: &'static str, message: impl Into<String>) -> Error {
+    Error::ExternalProviderFailure {
+        code,
+        message: message.into(),
+    }
+}
+
 pub fn run_configured(roots: &VerificationRoots) -> Result<Vec<ExternalProviderRun>, Error> {
     run_selected(roots, None)
 }
@@ -98,15 +115,17 @@ pub fn run_selected(
     let Some(config_path) = selected_config_path(roots) else {
         return Ok(Vec::new());
     };
-    let bytes = fs::read(&config_path).map_err(|source| Error::Io {
-        path: config_path.clone(),
-        source,
+    let bytes = fs::read(&config_path).map_err(|source| {
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("could not read {}: {source}", config_path.display()),
+        )
     })?;
     let config: Configuration = serde_json::from_slice(&bytes).map_err(|error| {
-        Error::ProviderFailure(format!(
-            "{}: invalid configuration: {error}",
-            config_path.display()
-        ))
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("{}: invalid configuration: {error}", config_path.display()),
+        )
     })?;
     if config.external_providers.is_empty() {
         return Ok(Vec::new());
@@ -127,10 +146,13 @@ pub fn run_selected(
         let executable_input = semantic_input_for_path(roots, &executable)?;
         let timeout_ms = definition.timeout_ms.unwrap_or(base_timeout);
         if timeout_ms == 0 || timeout_ms > MAX_TIMEOUT_MS {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` timeout must be between 1 and {MAX_TIMEOUT_MS} ms",
-                definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_CONFIGURATION,
+                format!(
+                    "external provider `{}` timeout must be between 1 and {MAX_TIMEOUT_MS} ms",
+                    definition.id
+                ),
+            ));
         }
         let mut run = run_one(roots, &definition, &executable, timeout_ms)?;
         run.inputs.push(config_input.clone());
@@ -144,9 +166,10 @@ pub fn run_selected(
     if let Some(selected) = selected
         && runs.is_empty()
     {
-        return Err(Error::ProviderFailure(format!(
-            "unknown external provider `{selected}`"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("unknown external provider `{selected}`"),
+        ));
     }
     Ok(runs)
 }
@@ -165,34 +188,43 @@ fn validate_definition(
     ids: &mut BTreeSet<String>,
 ) -> Result<(), Error> {
     if !valid_identifier(&definition.id) {
-        return Err(Error::ProviderFailure(format!(
-            "external provider id `{}` must contain only ASCII letters, digits, `.`, `_`, or `-`",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "external provider id `{}` must contain only ASCII letters, digits, `.`, `_`, or `-`",
+                definition.id
+            ),
+        ));
     }
     if !ids.insert(definition.id.clone()) {
-        return Err(Error::ProviderFailure(format!(
-            "duplicate external provider id `{}`",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("duplicate external provider id `{}`", definition.id),
+        ));
     }
     if definition.protocol != PROTOCOL_VERSION {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` uses unsupported protocol `{}`",
-            definition.id, definition.protocol
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "external provider `{}` uses unsupported protocol `{}`",
+                definition.id, definition.protocol
+            ),
+        ));
     }
     if definition.version.trim().is_empty() {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` has an empty version",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("external provider `{}` has an empty version", definition.id),
+        ));
     }
     if definition.executable.as_os_str().is_empty() {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` has an empty executable path",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "external provider `{}` has an empty executable path",
+                definition.id
+            ),
+        ));
     }
     Ok(())
 }
@@ -222,28 +254,43 @@ fn resolve_executable(config_path: &Path, configured: &Path) -> Result<PathBuf, 
             .unwrap_or_else(|| Path::new("."))
             .join(configured)
     };
-    let path = fs::canonicalize(&path).map_err(|source| Error::Io {
-        path: path.clone(),
-        source,
+    let path = fs::canonicalize(&path).map_err(|source| {
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "could not resolve provider executable {}: {source}",
+                path.display()
+            ),
+        )
     })?;
     if !path.is_file() {
-        return Err(Error::ProviderFailure(format!(
-            "external provider executable {} is not a file",
-            path.display()
-        )));
+        return Err(failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "external provider executable {} is not a file",
+                path.display()
+            ),
+        ));
     }
     Ok(path)
 }
 
 fn semantic_input_for_path(roots: &VerificationRoots, path: &Path) -> Result<SemanticInput, Error> {
-    let canonical_path = fs::canonicalize(path).map_err(|source| Error::Io {
-        path: path.to_path_buf(),
-        source,
+    let canonical_path = fs::canonicalize(path).map_err(|source| {
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("could not resolve {}: {source}", path.display()),
+        )
     })?;
     let canonical_specification =
-        fs::canonicalize(&roots.specification_root).map_err(|source| Error::Io {
-            path: roots.specification_root.clone(),
-            source,
+        fs::canonicalize(&roots.specification_root).map_err(|source| {
+            failure(
+                DIAGNOSTIC_CONFIGURATION,
+                format!(
+                    "could not resolve specification_root {}: {source}",
+                    roots.specification_root.display()
+                ),
+            )
         })?;
     if canonical_path.starts_with(&canonical_specification) {
         return Ok(SemanticInput {
@@ -251,9 +298,14 @@ fn semantic_input_for_path(roots: &VerificationRoots, path: &Path) -> Result<Sem
             path: canonical_path,
         });
     }
-    let canonical_project = fs::canonicalize(&roots.project_root).map_err(|source| Error::Io {
-        path: roots.project_root.clone(),
-        source,
+    let canonical_project = fs::canonicalize(&roots.project_root).map_err(|source| {
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!(
+                "could not resolve project_root {}: {source}",
+                roots.project_root.display()
+            ),
+        )
     })?;
     if canonical_path.starts_with(&canonical_project) {
         return Ok(SemanticInput {
@@ -261,10 +313,13 @@ fn semantic_input_for_path(roots: &VerificationRoots, path: &Path) -> Result<Sem
             path: canonical_path,
         });
     }
-    Err(Error::ProviderFailure(format!(
-        "external provider executable/configuration {} must be inside project_root or specification_root",
-        path.display()
-    )))
+    Err(failure(
+        DIAGNOSTIC_CONFIGURATION,
+        format!(
+            "external provider executable/configuration {} must be inside project_root or specification_root",
+            path.display()
+        ),
+    ))
 }
 
 fn run_one(
@@ -273,9 +328,14 @@ fn run_one(
     executable: &Path,
     timeout_ms: u64,
 ) -> Result<ExternalProviderRun, Error> {
-    fs::create_dir_all(&roots.state_root).map_err(|source| Error::Io {
-        path: roots.state_root.clone(),
-        source,
+    fs::create_dir_all(&roots.state_root).map_err(|source| {
+        failure(
+            DIAGNOSTIC_EXECUTION,
+            format!(
+                "could not create state_root {}: {source}",
+                roots.state_root.display()
+            ),
+        )
     })?;
     let request = ExternalProviderRequest {
         schema_version: REQUEST_SCHEMA_VERSION.into(),
@@ -301,10 +361,13 @@ fn run_one(
         command.process_group(0);
     }
     let mut child = command.spawn().map_err(|error| {
-        Error::ProviderFailure(format!(
-            "external provider `{}` could not start: {error}",
-            definition.id
-        ))
+        failure(
+            DIAGNOSTIC_EXECUTION,
+            format!(
+                "external provider `{}` could not start: {error}",
+                definition.id
+            ),
+        )
     })?;
     let stdout = child.stdout.take().expect("piped provider stdout");
     let stderr = child.stderr.take().expect("piped provider stderr");
@@ -317,29 +380,35 @@ fn run_one(
         let _ = child.wait();
         let _ = stdout_reader.join();
         let _ = stderr_reader.join();
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` request write failed: {error}",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_EXECUTION,
+            format!(
+                "external provider `{}` request write failed: {error}",
+                definition.id
+            ),
+        ));
     }
 
     let started = Instant::now();
     let (status, timed_out) = loop {
         if let Some(status) = child.try_wait().map_err(|error| {
-            Error::ProviderFailure(format!(
-                "external provider `{}` wait failed: {error}",
-                definition.id
-            ))
+            failure(
+                DIAGNOSTIC_EXECUTION,
+                format!("external provider `{}` wait failed: {error}", definition.id),
+            )
         })? {
             break (status, false);
         }
         if started.elapsed() >= Duration::from_millis(timeout_ms) {
             kill_process_tree(&mut child);
             let status = child.wait().map_err(|error| {
-                Error::ProviderFailure(format!(
-                    "external provider `{}` timeout cleanup failed: {error}",
-                    definition.id
-                ))
+                failure(
+                    DIAGNOSTIC_TIMEOUT,
+                    format!(
+                        "external provider `{}` timeout cleanup failed: {error}",
+                        definition.id
+                    ),
+                )
             })?;
             break (status, true);
         }
@@ -348,45 +417,63 @@ fn run_one(
     let stdout = join_reader(stdout_reader, &definition.id, "stdout")?;
     let stderr = join_reader(stderr_reader, &definition.id, "stderr")?;
     if timed_out {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` timed out after {timeout_ms} ms",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_TIMEOUT,
+            format!(
+                "external provider `{}` timed out after {timeout_ms} ms",
+                definition.id
+            ),
+        ));
     }
     if stdout.exceeded_limit || stderr.exceeded_limit {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` exceeded the {MAX_OUTPUT_BYTES}-byte output limit",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_OUTPUT_LIMIT,
+            format!(
+                "external provider `{}` exceeded the {MAX_OUTPUT_BYTES}-byte output limit",
+                definition.id
+            ),
+        ));
     }
     let stderr = String::from_utf8(stderr.bytes).map_err(|_| {
-        Error::ProviderFailure(format!(
-            "external provider `{}` wrote non-UTF-8 stderr",
-            definition.id
-        ))
+        failure(
+            DIAGNOSTIC_RESPONSE,
+            format!(
+                "external provider `{}` wrote non-UTF-8 stderr",
+                definition.id
+            ),
+        )
     })?;
     if !status.success() {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` exited with {}: {}",
-            definition.id,
-            status,
-            stderr.trim()
-        )));
+        return Err(failure(
+            DIAGNOSTIC_EXECUTION,
+            format!(
+                "external provider `{}` exited with {}: {}",
+                definition.id,
+                status,
+                stderr.trim()
+            ),
+        ));
     }
     let response_value: serde_json::Value =
         serde_json::from_slice(&stdout.bytes).map_err(|error| {
-            Error::ProviderFailure(format!(
-                "external provider `{}` returned invalid JSON: {error}",
-                definition.id
-            ))
+            failure(
+                DIAGNOSTIC_RESPONSE,
+                format!(
+                    "external provider `{}` returned invalid JSON: {error}",
+                    definition.id
+                ),
+            )
         })?;
     validate_wire_shape(&response_value, &definition.id)?;
     let mut response: ExternalProviderResponse =
         serde_json::from_value(response_value).map_err(|error| {
-            Error::ProviderFailure(format!(
-                "external provider `{}` response does not match v1: {error}",
-                definition.id
-            ))
+            failure(
+                DIAGNOSTIC_RESPONSE,
+                format!(
+                    "external provider `{}` response does not match v1: {error}",
+                    definition.id
+                ),
+            )
         })?;
     if !stderr.trim().is_empty() {
         response
@@ -458,9 +545,10 @@ fn validate_wire_shape(value: &serde_json::Value, provider: &str) -> Result<(), 
             "coverage",
         )?;
         let scope = coverage["scope"].as_object().ok_or_else(|| {
-            Error::ProviderFailure(format!(
-                "external provider `{provider}` coverage scope must be an object"
-            ))
+            failure(
+                DIAGNOSTIC_RESPONSE,
+                format!("external provider `{provider}` coverage scope must be an object"),
+            )
         })?;
         let scope_fields = if scope.get("kind").and_then(|kind| kind.as_str()) == Some("global") {
             &["kind"][..]
@@ -508,18 +596,22 @@ fn exact_object<'a>(
     context: &str,
 ) -> Result<&'a serde_json::Map<String, serde_json::Value>, Error> {
     let object = value.as_object().ok_or_else(|| {
-        Error::ProviderFailure(format!(
-            "external provider `{provider}` {context} must be an object"
-        ))
+        failure(
+            DIAGNOSTIC_RESPONSE,
+            format!("external provider `{provider}` {context} must be an object"),
+        )
     })?;
     let expected = fields.iter().copied().collect::<BTreeSet<_>>();
     let actual = object.keys().map(String::as_str).collect::<BTreeSet<_>>();
     if actual != expected {
         let missing = expected.difference(&actual).copied().collect::<Vec<_>>();
         let unknown = actual.difference(&expected).copied().collect::<Vec<_>>();
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{provider}` {context} fields mismatch; missing={missing:?}, unknown={unknown:?}"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_RESPONSE,
+            format!(
+                "external provider `{provider}` {context} fields mismatch; missing={missing:?}, unknown={unknown:?}"
+            ),
+        ));
     }
     Ok(object)
 }
@@ -530,9 +622,10 @@ fn exact_array<'a>(
     context: &str,
 ) -> Result<&'a Vec<serde_json::Value>, Error> {
     value.as_array().ok_or_else(|| {
-        Error::ProviderFailure(format!(
-            "external provider `{provider}` {context} must be an array"
-        ))
+        failure(
+            DIAGNOSTIC_RESPONSE,
+            format!("external provider `{provider}` {context} must be an array"),
+        )
     })
 }
 
@@ -569,14 +662,16 @@ fn join_reader(
     reader
         .join()
         .map_err(|_| {
-            Error::ProviderFailure(format!(
-                "external provider `{provider}` {stream} reader panicked"
-            ))
+            failure(
+                DIAGNOSTIC_EXECUTION,
+                format!("external provider `{provider}` {stream} reader panicked"),
+            )
         })?
         .map_err(|error| {
-            Error::ProviderFailure(format!(
-                "external provider `{provider}` {stream} read failed: {error}"
-            ))
+            failure(
+                DIAGNOSTIC_EXECUTION,
+                format!("external provider `{provider}` {stream} read failed: {error}"),
+            )
         })
 }
 
@@ -585,6 +680,15 @@ fn kill_process_tree(child: &mut std::process::Child) {
     {
         let _ = Command::new("kill")
             .args(["-KILL", &format!("-{}", child.id())])
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status();
+    }
+    #[cfg(windows)]
+    {
+        let _ = Command::new("taskkill.exe")
+            .args(["/PID", &child.id().to_string(), "/T", "/F"])
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::null())
@@ -601,24 +705,33 @@ fn validate_response(
     mut response: ExternalProviderResponse,
 ) -> Result<ExternalProviderRun, Error> {
     if response.schema_version != RESPONSE_SCHEMA_VERSION {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` returned unsupported schema `{}`",
-            definition.id, response.schema_version
-        )));
+        return Err(failure(
+            DIAGNOSTIC_IDENTITY,
+            format!(
+                "external provider `{}` returned unsupported schema `{}`",
+                definition.id, response.schema_version
+            ),
+        ));
     }
     if response.provider.id != definition.id || response.provider.version != definition.version {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` response identity/version does not match configuration",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_IDENTITY,
+            format!(
+                "external provider `{}` response identity/version does not match configuration",
+                definition.id
+            ),
+        ));
     }
 
     response.inputs.sort();
     if response.inputs.windows(2).any(|items| items[0] == items[1]) {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{}` returned duplicate semantic inputs",
-            definition.id
-        )));
+        return Err(failure(
+            DIAGNOSTIC_INPUT,
+            format!(
+                "external provider `{}` returned duplicate semantic inputs",
+                definition.id
+            ),
+        ));
     }
     let mut inputs = Vec::new();
     let mut input_ids = BTreeSet::new();
@@ -662,46 +775,64 @@ fn validate_response(
             &definition.id,
         )?;
         if artifact.id.0.trim().is_empty() || artifact.kind.trim().is_empty() {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` returned an artifact with an empty id or kind",
-                definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` returned an artifact with an empty id or kind",
+                    definition.id
+                ),
+            ));
         }
     }
     for fact in &mut response.facts {
         if !fact.id.0.starts_with(&format!("{}:", definition.id)) {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` fact id `{}` must start with `{}:`",
-                definition.id, fact.id.0, definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` fact id `{}` must start with `{}:`",
+                    definition.id, fact.id.0, definition.id
+                ),
+            ));
         }
         if !valid_relation(&fact.relation) || fact.arguments.is_empty() || !fact.value {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` facts must be positive, have arguments, and use ADRLogic relation names",
-                definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` facts must be positive, have arguments, and use ADRLogic relation names",
+                    definition.id
+                ),
+            ));
         }
         validate_provenance(&mut fact.provenance, &input_ids, &extractor, &definition.id)?;
         let source = fact.provenance.source.to_string_lossy();
         if !artifact_ids.contains(source.as_ref()) {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` must return a source artifact `{source}` for fact `{}`",
-                definition.id, fact.id.0
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` must return a source artifact `{source}` for fact `{}`",
+                    definition.id, fact.id.0
+                ),
+            ));
         }
     }
     for coverage in &mut response.coverage {
         if coverage.provider != definition.id || !valid_relation(&coverage.relation) {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` returned invalid coverage ownership/relation",
-                definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` returned invalid coverage ownership/relation",
+                    definition.id
+                ),
+            ));
         }
         if coverage.statement.trim().is_empty() {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{}` returned coverage without a statement",
-                definition.id
-            )));
+            return Err(failure(
+                DIAGNOSTIC_AUTHORITY,
+                format!(
+                    "external provider `{}` returned coverage without a statement",
+                    definition.id
+                ),
+            ));
         }
         for diagnostic in &mut coverage.diagnostics {
             validate_provenance(
@@ -735,22 +866,31 @@ fn validate_provenance(
         provenance.kind,
         ProvenanceKind::DeterministicallyExtracted | ProvenanceKind::Authoritative
     ) {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{provider}` may emit only deterministically_extracted or authoritative provenance"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_AUTHORITY,
+            format!(
+                "external provider `{provider}` may emit only deterministically_extracted or authoritative provenance"
+            ),
+        ));
     }
     let source = provenance.source.to_string_lossy();
     if !inputs.contains(source.as_ref()) {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{provider}` provenance source `{source}` is not a declared input"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_AUTHORITY,
+            format!(
+                "external provider `{provider}` provenance source `{source}` is not a declared input"
+            ),
+        ));
     }
     if let Some(span) = &provenance.span
         && span.filename != provenance.source
     {
-        return Err(Error::ProviderFailure(format!(
-            "external provider `{provider}` span filename must equal its provenance source"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_AUTHORITY,
+            format!(
+                "external provider `{provider}` span filename must equal its provenance source"
+            ),
+        ));
     }
     provenance.extractor = Some(match provenance.extractor.take() {
         Some(value) if !value.trim().is_empty() => format!("{extractor}; {value}"),
@@ -767,9 +907,10 @@ fn ensure_unique<'a>(
     let mut seen = BTreeSet::new();
     for value in values {
         if !seen.insert(value) {
-            return Err(Error::ProviderFailure(format!(
-                "external provider `{provider}` returned duplicate {kind} id `{value}`"
-            )));
+            return Err(failure(
+                DIAGNOSTIC_COLLISION,
+                format!("external provider `{provider}` returned duplicate {kind} id `{value}`"),
+            ));
         }
     }
     Ok(())
@@ -784,9 +925,10 @@ fn resolve_declared_input(
     } else if let Some(relative) = identity.strip_prefix("spec:") {
         (&roots.specification_root, relative)
     } else {
-        return Err(Error::ProviderFailure(format!(
-            "external provider input `{identity}` must use project: or spec: namespace"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_INPUT,
+            format!("external provider input `{identity}` must use project: or spec: namespace"),
+        ));
     };
     if relative.is_empty()
         || relative.contains('\\')
@@ -794,23 +936,29 @@ fn resolve_declared_input(
             .components()
             .any(|component| !matches!(component, Component::Normal(_)))
     {
-        return Err(Error::ProviderFailure(format!(
-            "external provider input `{identity}` is not a normalized logical path"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_INPUT,
+            format!("external provider input `{identity}` is not a normalized logical path"),
+        ));
     }
-    let root_canonical = fs::canonicalize(root).map_err(|source| Error::Io {
-        path: root.clone(),
-        source,
+    let root_canonical = fs::canonicalize(root).map_err(|source| {
+        failure(
+            DIAGNOSTIC_INPUT,
+            format!("could not resolve input root {}: {source}", root.display()),
+        )
     })?;
     let path = root.join(relative);
-    let canonical = fs::canonicalize(&path).map_err(|source| Error::Io {
-        path: path.clone(),
-        source,
+    let canonical = fs::canonicalize(&path).map_err(|source| {
+        failure(
+            DIAGNOSTIC_INPUT,
+            format!("external provider input `{identity}` could not be resolved: {source}"),
+        )
     })?;
     if !canonical.starts_with(&root_canonical) || !canonical.is_file() {
-        return Err(Error::ProviderFailure(format!(
-            "external provider input `{identity}` must resolve to a file inside its root"
-        )));
+        return Err(failure(
+            DIAGNOSTIC_INPUT,
+            format!("external provider input `{identity}` must resolve to a file inside its root"),
+        ));
     }
     Ok(SemanticInput {
         identity: identity.into(),
@@ -829,9 +977,13 @@ mod tests {
 
     fn test_roots() -> VerificationRoots {
         let root = std::env::temp_dir().join(format!(
-            "adrproof-external-provider-{}-{}",
+            "adrproof-external-provider-{}-{}-{}",
             std::process::id(),
-            NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed)
+            NEXT_DIRECTORY.fetch_add(1, Ordering::Relaxed),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
         ));
         let project = root.join("project");
         let specification = root.join("specification");
@@ -877,10 +1029,12 @@ mod tests {
 
     fn configure(roots: &VerificationRoots, script_body: &str, timeout_ms: u64) {
         let executable = roots.specification_root.join("provider.sh");
-        fs::write(&executable, format!("#!/bin/sh\n{script_body}\n")).unwrap();
-        let mut permissions = fs::metadata(&executable).unwrap().permissions();
+        let replacement = roots.specification_root.join("provider.sh.next");
+        fs::write(&replacement, format!("#!/bin/sh\n{script_body}\n")).unwrap();
+        let mut permissions = fs::metadata(&replacement).unwrap().permissions();
         permissions.set_mode(0o755);
-        fs::set_permissions(&executable, permissions).unwrap();
+        fs::set_permissions(&replacement, permissions).unwrap();
+        fs::rename(replacement, &executable).unwrap();
         fs::write(
             roots.specification_root.join("adrproof.json"),
             serde_json::to_vec_pretty(&serde_json::json!({
@@ -985,6 +1139,31 @@ mod tests {
         assert!(error.contains("timed out after 20 ms"), "{error}");
     }
 
+    #[cfg(target_os = "linux")]
+    #[test]
+    fn provider_timeout_terminates_descendant_processes() {
+        let roots = test_roots();
+        configure(
+            &roots,
+            "cat >/dev/null\nsleep 30 &\necho $! > child.pid\nwait",
+            100,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("timed out"), "{error}");
+        let pid = fs::read_to_string(roots.state_root.join("child.pid"))
+            .unwrap()
+            .trim()
+            .to_string();
+        let process = PathBuf::from(format!("/proc/{pid}"));
+        for _ in 0..40 {
+            if !process.exists() {
+                return;
+            }
+            thread::sleep(Duration::from_millis(25));
+        }
+        panic!("provider descendant {pid} survived timeout cleanup");
+    }
+
     #[test]
     fn llm_derived_provider_fact_is_rejected() {
         let roots = test_roots();
@@ -1026,6 +1205,229 @@ mod tests {
     }
 
     #[test]
+    fn unknown_nested_fields_are_rejected_at_every_protocol_boundary() {
+        let roots = test_roots();
+        let original: serde_json::Value = serde_json::from_str(&response(
+            "deterministically_extracted",
+            "project:input.txt",
+        ))
+        .unwrap();
+        let rejects = |value: serde_json::Value| {
+            configure(
+                &roots,
+                &output_script(&serde_json::to_string(&value).unwrap()),
+                1_000,
+            );
+            let error = run_configured(&roots).unwrap_err().to_string();
+            assert!(error.contains("fields mismatch"), "{error}");
+        };
+
+        let mut provider = original.clone();
+        provider["provider"]["unknown"] = serde_json::json!(true);
+        rejects(provider);
+
+        let mut artifact = original.clone();
+        artifact["artifacts"][0]["unknown"] = serde_json::json!(true);
+        rejects(artifact);
+
+        let mut fact = original.clone();
+        fact["facts"][0]["unknown"] = serde_json::json!(true);
+        rejects(fact);
+
+        let mut provenance = original.clone();
+        provenance["facts"][0]["provenance"]["unknown"] = serde_json::json!(true);
+        rejects(provenance);
+
+        let mut coverage = original.clone();
+        coverage["coverage"][0]["unknown"] = serde_json::json!(true);
+        rejects(coverage);
+
+        let mut scope = original.clone();
+        scope["coverage"][0]["scope"]["unknown"] = serde_json::json!(true);
+        rejects(scope);
+    }
+
+    #[test]
+    fn schema_and_identity_mismatches_are_rejected() {
+        let roots = test_roots();
+        let unknown_schema = response("deterministically_extracted", "project:input.txt").replace(
+            RESPONSE_SCHEMA_VERSION,
+            "adrproof-external-provider-response-v2",
+        );
+        configure(&roots, &output_script(&unknown_schema), 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("unsupported schema"), "{error}");
+
+        let wrong_identity = response("deterministically_extracted", "project:input.txt")
+            .replace("\"id\": \"fixture\"", "\"id\": \"other\"");
+        configure(&roots, &output_script(&wrong_identity), 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("identity/version"), "{error}");
+    }
+
+    #[test]
+    fn duplicate_inputs_artifacts_and_facts_are_rejected() {
+        let roots = test_roots();
+        let original: serde_json::Value = serde_json::from_str(&response(
+            "deterministically_extracted",
+            "project:input.txt",
+        ))
+        .unwrap();
+
+        let mut duplicate_inputs = original.clone();
+        duplicate_inputs["inputs"]
+            .as_array_mut()
+            .unwrap()
+            .push(serde_json::json!("project:input.txt"));
+        configure(
+            &roots,
+            &output_script(&serde_json::to_string(&duplicate_inputs).unwrap()),
+            1_000,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("duplicate semantic inputs"), "{error}");
+
+        for field in ["artifacts", "facts"] {
+            let mut duplicated = original.clone();
+            let item = duplicated[field][0].clone();
+            duplicated[field].as_array_mut().unwrap().push(item);
+            configure(
+                &roots,
+                &output_script(&serde_json::to_string(&duplicated).unwrap()),
+                1_000,
+            );
+            let error = run_configured(&roots).unwrap_err().to_string();
+            assert!(error.contains("duplicate"), "{field}: {error}");
+        }
+    }
+
+    #[test]
+    fn malformed_partial_and_trailing_json_are_rejected() {
+        let roots = test_roots();
+        for output in ["{", "null", "{} {}"] {
+            configure(&roots, &output_script(output), 1_000);
+            let error = run_configured(&roots).unwrap_err().to_string();
+            assert!(
+                error.contains("invalid JSON") || error.contains("must be an object"),
+                "{output:?}: {error}"
+            );
+        }
+    }
+
+    #[test]
+    fn non_utf8_stdout_and_stderr_are_rejected() {
+        let roots = test_roots();
+        configure(&roots, "cat >/dev/null\nprintf '\\377'", 1_000);
+        let error = run_configured(&roots).unwrap_err();
+        assert!(
+            matches!(
+                error,
+                Error::ExternalProviderFailure {
+                    code: DIAGNOSTIC_RESPONSE,
+                    ..
+                }
+            ),
+            "{error}"
+        );
+
+        let valid = output_script(&response(
+            "deterministically_extracted",
+            "project:input.txt",
+        ));
+        configure(&roots, &format!("{valid}\nprintf '\\377' >&2"), 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("non-UTF-8 stderr"), "{error}");
+    }
+
+    #[test]
+    fn nonzero_exit_and_output_limits_fail_closed() {
+        let roots = test_roots();
+        configure(&roots, "cat >/dev/null\necho rejected >&2\nexit 7", 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(
+            error.contains("exited with") && error.contains("rejected"),
+            "{error}"
+        );
+
+        configure(
+            &roots,
+            &format!("cat >/dev/null\nhead -c {} /dev/zero", MAX_OUTPUT_BYTES + 1),
+            2_000,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("output limit"), "{error}");
+
+        configure(
+            &roots,
+            &format!(
+                "cat >/dev/null\nhead -c {} /dev/zero >&2",
+                MAX_OUTPUT_BYTES + 1
+            ),
+            2_000,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("output limit"), "{error}");
+    }
+
+    #[test]
+    fn fact_source_artifact_and_span_are_enforced() {
+        let roots = test_roots();
+        let mut missing_artifact: serde_json::Value = serde_json::from_str(&response(
+            "deterministically_extracted",
+            "project:input.txt",
+        ))
+        .unwrap();
+        missing_artifact["artifacts"] = serde_json::json!([]);
+        configure(
+            &roots,
+            &output_script(&serde_json::to_string(&missing_artifact).unwrap()),
+            1_000,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("source artifact"), "{error}");
+
+        fs::write(roots.project_root.join("other.txt"), "other\n").unwrap();
+        let mut bad_span: serde_json::Value = serde_json::from_str(&response(
+            "deterministically_extracted",
+            "project:input.txt",
+        ))
+        .unwrap();
+        bad_span["inputs"] = serde_json::json!(["project:input.txt", "project:other.txt"]);
+        bad_span["facts"][0]["provenance"]["span"] = serde_json::json!({
+            "filename": "project:other.txt",
+            "line": 1,
+            "column": 1
+        });
+        configure(
+            &roots,
+            &output_script(&serde_json::to_string(&bad_span).unwrap()),
+            1_000,
+        );
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("span filename"), "{error}");
+    }
+
+    #[test]
+    fn path_traversal_and_symlink_escape_are_rejected() {
+        let roots = test_roots();
+        let outside = roots.project_root.parent().unwrap().join("outside.txt");
+        fs::write(&outside, "outside\n").unwrap();
+
+        let traversal = response("deterministically_extracted", "project:input.txt")
+            .replace("project:input.txt", "project:../outside.txt");
+        configure(&roots, &output_script(&traversal), 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("normalized logical path"), "{error}");
+
+        std::os::unix::fs::symlink(&outside, roots.project_root.join("escape.txt")).unwrap();
+        let symlink = response("deterministically_extracted", "project:input.txt")
+            .replace("project:input.txt", "project:escape.txt");
+        configure(&roots, &output_script(&symlink), 1_000);
+        let error = run_configured(&roots).unwrap_err().to_string();
+        assert!(error.contains("inside its root"), "{error}");
+    }
+
+    #[test]
     fn provider_configuration_and_executable_control_semantic_fingerprints() {
         let roots = test_roots();
         fs::write(
@@ -1063,5 +1465,88 @@ mod tests {
         let (configuration_changed_facts, configuration_changed) = fingerprints();
         assert_eq!(original_facts, configuration_changed_facts);
         assert_ne!(executable_changed, configuration_changed);
+
+        fs::write(roots.project_root.join("unrelated.txt"), "not declared\n").unwrap();
+        let (unrelated_changed_facts, unrelated_changed) = fingerprints();
+        assert_eq!(original_facts, unrelated_changed_facts);
+        assert_eq!(configuration_changed, unrelated_changed);
+    }
+}
+
+#[cfg(test)]
+mod conformance_tests {
+    use super::*;
+    use crate::roots::VerificationRoots;
+
+    #[test]
+    fn external_provider_v1_fixtures_match_expected_outcomes() {
+        let kit =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("conformance/external-provider-v1");
+        let manifest: serde_json::Value =
+            serde_json::from_slice(&fs::read(kit.join("cases.json")).unwrap()).unwrap();
+        assert_eq!(
+            manifest["schema_version"],
+            "adrproof-external-provider-conformance-v1"
+        );
+
+        let roots = VerificationRoots::explicit(
+            &kit.join("roots/project"),
+            &kit.join("roots/spec"),
+            &std::env::temp_dir().join("adrproof-conformance-state"),
+        );
+        let definition = ExternalProviderDefinition {
+            id: "fixture".into(),
+            protocol: PROTOCOL_VERSION.into(),
+            version: "1.0.0".into(),
+            executable: "provider.stub".into(),
+            args: Vec::new(),
+            timeout_ms: Some(1_000),
+            parameters: BTreeMap::new(),
+        };
+        let executable = roots.specification_root.join("provider.stub");
+
+        for case in manifest["cases"].as_array().unwrap() {
+            let relative = case["file"].as_str().unwrap();
+            let value: serde_json::Value =
+                serde_json::from_slice(&fs::read(kit.join(relative)).unwrap()).unwrap();
+            let result =
+                validate_wire_shape(&value, &definition.id)
+                    .and_then(|()| {
+                        serde_json::from_value(value).map_err(|error| {
+                        failure(DIAGNOSTIC_RESPONSE, format!(
+                            "external provider `fixture` response does not match v1: {error}"
+                        ))
+                    })
+                    })
+                    .and_then(|response| {
+                        validate_response(
+                            &roots,
+                            &definition,
+                            &executable,
+                            Duration::from_millis(1),
+                            response,
+                        )
+                    });
+
+            if case["accept"].as_bool().unwrap() {
+                assert!(result.is_ok(), "{relative}: {result:?}");
+            } else {
+                let error = result.expect_err(&format!("{relative} must be rejected"));
+                let Error::ExternalProviderFailure { code, .. } = &error else {
+                    panic!("{relative}: expected an external-provider diagnostic, got {error:?}");
+                };
+                assert_eq!(
+                    *code,
+                    case["diagnostic_code"].as_str().unwrap(),
+                    "{relative}"
+                );
+                let error = error.to_string();
+                let expected = case["error_contains"].as_str().unwrap();
+                assert!(
+                    error.contains(expected),
+                    "{relative}: expected {expected:?} in {error:?}"
+                );
+            }
+        }
     }
 }

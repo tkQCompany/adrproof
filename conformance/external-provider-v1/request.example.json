@@ -1,0 +1,9 @@
+{
+  "schema_version": "adrproof-external-provider-request-v1",
+  "provider_id": "fixture",
+  "provider_version": "1.0.0",
+  "project_root": "/project",
+  "specification_root": "/spec",
+  "state_root": "/state",
+  "parameters": {"manifest": "component.json"}
+}

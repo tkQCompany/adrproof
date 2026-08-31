@@ -18,7 +18,10 @@ Status: released as source at commit
 
 ## 0.2 — external provider protocol
 
-Status: in development as package version `0.2.0-alpha.1`.
+Status: public source alpha at commit
+`105fb808d91027bae3b42207de14614e4eb54c2e`, package version
+`0.2.0-alpha.1`. The protocol remains pre-stable until the conformance kit and
+private cross-project pilot are complete.
 
 The milestone makes fact extraction extensible without compiling every provider
 into ADRProof.
@@ -35,10 +38,25 @@ into ADRProof.
   inputs for evidence staleness;
 - [x] deterministic ordering and collision rejection;
 - [x] neutral reference provider and contract tests;
-- [ ] publish reproducible provider conformance fixtures for other languages;
+- [x] publish reproducible provider conformance fixtures for other languages;
 - [x] add an explicit `provider check` conformance command;
 - [ ] run a private cross-project pilot without adding customer-specific code to
   the public repository.
+
+### Release progression
+
+- **alpha**: the vertical slice is public, but diagnostics and protocol details
+  may still change in response to conformance and pilot findings;
+- **beta**: protocol v1, its schemas, exit behavior, and machine-readable
+  diagnostics are frozen; only compatible fixes are accepted;
+- **stable**: the portable conformance suite passes on all supported platforms,
+  the private pilot is complete, documentation works from a clean checkout, and
+  no release-blocking protocol defect remains.
+
+Package versions and protocol versions are independent. ADRProof may release a
+new package without changing the provider protocol. An incompatible protocol
+change requires a new protocol identifier and schemas; it never silently changes
+the meaning of v1. See [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Acceptance criteria
 

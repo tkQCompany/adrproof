@@ -18,7 +18,12 @@ explicit authority boundaries, and reviewable evidence as product requirements.
    cargo fmt --all -- --check
    cargo clippy --locked --all-targets --all-features -- -D warnings
    cargo test --locked --all-targets
+   cargo test --locked external_provider::conformance_tests
+   cargo audit --deny warnings
    ```
+
+CI repeats the test suite on Linux, macOS, and Windows with Rust 1.98.0, the
+minimum supported Rust version.
 
 ## AI-assisted contributions
 

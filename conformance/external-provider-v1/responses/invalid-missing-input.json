@@ -1,0 +1,9 @@
+{
+  "schema_version": "adrproof-external-provider-response-v1",
+  "provider": {"id": "fixture", "version": "1.0.0"},
+  "inputs": ["project:missing.json"],
+  "artifacts": [],
+  "facts": [],
+  "coverage": [],
+  "diagnostics": []
+}

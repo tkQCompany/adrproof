@@ -52,6 +52,8 @@ pub enum Error {
     SolverFailure(String),
     #[error("fact provider failed: {0}")]
     ProviderFailure(String),
+    #[error("external provider failed [{code}]: {message}")]
+    ExternalProviderFailure { code: &'static str, message: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]

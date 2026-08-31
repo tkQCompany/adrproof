@@ -1,0 +1,13 @@
+{
+  "schema_version": "adrproof-external-provider-response-v1",
+  "provider": {"id": "fixture", "version": "1.0.0"},
+  "inputs": [],
+  "artifacts": [{
+    "id": "project:component.json",
+    "kind": "component_manifest",
+    "provenance": {"kind": "deterministically_extracted", "source": "project:component.json", "span": null, "extractor": null}
+  }],
+  "facts": [],
+  "coverage": [],
+  "diagnostics": []
+}

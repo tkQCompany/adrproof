@@ -1,0 +1,20 @@
+{
+  "schema_version": "adrproof-external-provider-response-v1",
+  "provider": {"id": "fixture", "version": "1.0.0"},
+  "inputs": ["project:component.json"],
+  "artifacts": [{
+    "id": "project:component.json",
+    "kind": "component_manifest",
+    "provenance": {"kind": "deterministically_extracted", "source": "project:component.json", "span": null, "extractor": null}
+  }],
+  "facts": [{
+    "id": "fixture:component:api",
+    "relation": "component",
+    "arguments": ["api"],
+    "value": false,
+    "attributes": {},
+    "provenance": {"kind": "deterministically_extracted", "source": "project:component.json", "span": null, "extractor": null}
+  }],
+  "coverage": [],
+  "diagnostics": []
+}

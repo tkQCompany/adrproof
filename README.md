@@ -29,6 +29,9 @@ cargo run -- bundle verify BUNDLE_DIRECTORY --json
 ```
 
 The [roadmap](ROADMAP.md) tracks release authority and current milestone scope.
+Release history is recorded in the [changelog](CHANGELOG.md), while package,
+protocol, and schema compatibility are defined in
+[versioning](docs/VERSIONING.md).
 
 Read-only/external verification can independently select `--project-root`,
 `--spec-root`, and `--state-root`; see
@@ -59,7 +62,9 @@ versioned JSON process boundary. Provider configuration, executable bytes, and
 declared logical inputs participate in evidence staleness; malformed output,
 timeouts, undeclared inputs, and non-deterministic provenance fail closed. See
 the [external provider protocol](docs/EXTERNAL_PROVIDER_PROTOCOL.md) and its
-[neutral example](examples/external-provider/).
+[neutral example](examples/external-provider/). Provider authors should follow
+the [author guide](docs/WRITING_EXTERNAL_PROVIDERS.md) and the
+[migration guide](docs/MIGRATING_FACT_PROVIDERS.md).
 
 Quint model checking is a specialized external backend with explicit
 formal-model-only authority. TLC exhaustive results, Apalache bounded results,

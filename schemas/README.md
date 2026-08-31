@@ -12,6 +12,8 @@ identifiers are immutable: incompatible changes require a new file and a new
   external fact provider's standard input.
 - `external-provider-response-v1.schema.json` — facts, coverage, provenance,
   and declared semantic inputs returned by that provider.
+- `provider-check-report-v1.schema.json` — stable success/error report emitted
+  by `provider check --json`.
 
 The Rust deserializers remain the enforcement boundary. These schemas are the
 portable contract for CI, editors, and downstream integrations.

@@ -1,0 +1,16 @@
+{
+  "schema_version": "adrproof-external-provider-conformance-v1",
+  "cases": [
+    {"file": "responses/valid-minimal.json", "accept": true},
+    {"file": "responses/valid-partial-empty.json", "accept": true},
+    {"file": "responses/valid-closed-component.json", "accept": true},
+    {"file": "responses/invalid-unknown-schema.json", "accept": false, "diagnostic_code": "ADRP-EXTP-301", "error_contains": "unsupported schema"},
+    {"file": "responses/invalid-identity.json", "accept": false, "diagnostic_code": "ADRP-EXTP-301", "error_contains": "identity/version"},
+    {"file": "responses/invalid-extra-field.json", "accept": false, "diagnostic_code": "ADRP-EXTP-300", "error_contains": "fields mismatch"},
+    {"file": "responses/invalid-duplicate-input.json", "accept": false, "diagnostic_code": "ADRP-EXTP-400", "error_contains": "duplicate semantic inputs"},
+    {"file": "responses/invalid-undeclared-source.json", "accept": false, "diagnostic_code": "ADRP-EXTP-500", "error_contains": "not a declared input"},
+    {"file": "responses/invalid-negative-fact.json", "accept": false, "diagnostic_code": "ADRP-EXTP-500", "error_contains": "facts must be positive"},
+    {"file": "responses/invalid-logical-path.json", "accept": false, "diagnostic_code": "ADRP-EXTP-400", "error_contains": "normalized logical path"},
+    {"file": "responses/invalid-missing-input.json", "accept": false, "diagnostic_code": "ADRP-EXTP-400", "error_contains": "could not be resolved"}
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/provider-check-report-v1.schema.json",
+  "title": "ADRProof external-provider check report v1",
+  "type": "object",
+  "required": ["schema_version", "protocol", "result", "diagnostics"],
+  "properties": {
+    "schema_version": {"const": "adrproof-provider-check-report-v1"},
+    "protocol": {"const": "adrproof-external-provider-v1"},
+    "result": {"enum": ["PASS", "ERROR"]},
+    "exit_code": {"const": 6},
+    "providers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["provider", "protocol", "result", "elapsed_ms", "facts", "artifacts", "coverage_claims", "semantic_inputs", "diagnostics"],
+        "properties": {
+          "provider": {
+            "type": "object",
+            "required": ["id", "version"],
+            "properties": {
+              "id": {"type": "string"},
+              "version": {"type": "string"}
+            },
+            "additionalProperties": false
+          },
+          "protocol": {"const": "adrproof-external-provider-v1"},
+          "result": {"const": "PASS"},
+          "elapsed_ms": {"type": "integer", "minimum": 0},
+          "facts": {"type": "integer", "minimum": 0},
+          "artifacts": {"type": "integer", "minimum": 0},
+          "coverage_claims": {"type": "integer", "minimum": 0},
+          "semantic_inputs": {"type": "array", "items": {"type": "string"}},
+          "diagnostics": {"type": "array", "items": {"type": "string"}}
+        },
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": {"pattern": "^ADRP-EXTP-[0-9]{3}$"},
+          "message": {"type": "string"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {"result": {"const": "PASS"}},
+      "required": ["providers"],
+      "not": {"required": ["exit_code"]}
+    },
+    {
+      "properties": {"result": {"const": "ERROR"}},
+      "required": ["exit_code"],
+      "not": {"required": ["providers"]}
+    }
+  ],
+  "additionalProperties": false
+}

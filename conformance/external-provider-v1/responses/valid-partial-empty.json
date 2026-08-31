@@ -1,0 +1,17 @@
+{
+  "schema_version": "adrproof-external-provider-response-v1",
+  "provider": {"id": "fixture", "version": "1.0.0"},
+  "inputs": ["project:component.json"],
+  "artifacts": [],
+  "facts": [],
+  "coverage": [{
+    "relation": "component",
+    "provider": "fixture",
+    "world": "partial",
+    "scope": {"kind": "global"},
+    "qualifiers": {"format": "component-v1"},
+    "statement": "the provider reports recognized components but does not claim completeness",
+    "diagnostics": []
+  }],
+  "diagnostics": ["fixture intentionally makes no completeness claim"]
+}

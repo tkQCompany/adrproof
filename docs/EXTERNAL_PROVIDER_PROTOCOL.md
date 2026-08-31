@@ -84,7 +84,9 @@ UNVERIFIED where absence matters.
 - stderr: captured as diagnostics, also limited to 8 MiB;
 - timeout: provider-specific or the global configuration timeout, between 1 ms
   and 600,000 ms;
-- timeout cleanup: the provider process group is terminated on Unix;
+- timeout cleanup: the provider process group is terminated on Unix; on Windows
+  ADRProof asks `taskkill.exe /T /F` to terminate the process tree; direct child
+  termination remains the final fallback;
 - non-zero exit, timeout, malformed output, or contract violation: provider
 failure, CLI exit code 6.
 
@@ -95,6 +97,31 @@ proof backend:
 adrproof provider check --project-root PROJECT --spec-root SPEC --state-root STATE --json
 adrproof provider check component-manifest --project-root PROJECT --spec-root SPEC --state-root STATE --json
 ```
+
+`--json` emits the versioned
+[`provider-check-report-v1`](../schemas/provider-check-report-v1.schema.json)
+object. A successful report is written to stdout. A structured external-provider
+failure is written to stderr and the process exits with code 6. Without `--json`,
+`--summary` adds the sorted semantic inputs and provider diagnostics to the text
+report.
+
+Stable diagnostic families are:
+
+| Code | Meaning |
+| --- | --- |
+| `ADRP-EXTP-100` | configuration or selection |
+| `ADRP-EXTP-200` | process execution or I/O |
+| `ADRP-EXTP-201` | timeout or timeout cleanup |
+| `ADRP-EXTP-202` | stdout/stderr limit |
+| `ADRP-EXTP-300` | JSON or wire shape |
+| `ADRP-EXTP-301` | schema/provider identity mismatch |
+| `ADRP-EXTP-400` | logical or physical semantic input |
+| `ADRP-EXTP-500` | fact, coverage, or provenance authority |
+| `ADRP-EXTP-600` | duplicate identity or collision |
+
+Messages provide context and may be clarified during alpha. Automation should
+branch on the report schema, result, exit code, and diagnostic code rather than
+matching complete message text.
 
 The runner sorts providers, inputs, facts, artifacts, coverage, and diagnostics
 before merging them into the Project Intent Model. Configuration, executable,
@@ -116,3 +143,29 @@ cargo run -- check \
 ```
 
 The example is explanatory and is not a general package or architecture parser.
+Language-neutral accepted and rejected outputs live in
+[`conformance/external-provider-v1`](../conformance/external-provider-v1/).
+
+## Platform support
+
+Protocol and response conformance tests run on Linux, macOS, and Windows using
+the minimum supported Rust toolchain. Process execution details necessarily use
+platform facilities. A platform failure to terminate or reap a provider is an
+execution error and can never produce PASS.
+
+Provider executables must be native executable files for the host. A script
+with a Unix shebang is not a portable Windows executable; a cross-platform
+provider may ship native launchers or platform-specific configured executables.
+
+## Security boundary
+
+An external provider is trusted code selected by the project. It inherits the
+ADRProof process environment and may access filesystem, network, and system
+calls allowed to the invoking user. Protocol validation prevents malformed or
+over-authoritative output from becoming PASS; it does not make the provider safe
+to execute.
+
+OS/container sandbox profiles, privilege dropping, network isolation, and
+provider package acquisition are explicitly outside protocol v1 and ADRProof
+0.2. Run untrusted providers in an independently configured sandbox before
+invoking ADRProof.
