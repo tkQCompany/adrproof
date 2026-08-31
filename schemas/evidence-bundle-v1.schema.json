@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/evidence-bundle-v1.schema.json",
+  "title": "ADRProof evidence bundle manifest v1",
+  "type": "object",
+  "required": ["schema_version", "adrproof_version", "created_at_unix_nanos", "roots", "files", "authority"],
+  "properties": {
+    "schema_version": {"const": "adrproof-evidence-bundle-v1"},
+    "adrproof_version": {"type": "string", "minLength": 1},
+    "created_at_unix_nanos": {"type": "integer", "minimum": 0},
+    "roots": {"type": "object"},
+    "files": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256", "bytes"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1},
+          "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+          "bytes": {"type": "integer", "minimum": 0}
+        },
+        "additionalProperties": false
+      }
+    },
+    "authority": {"type": "string", "minLength": 1}
+  },
+  "additionalProperties": false
+}

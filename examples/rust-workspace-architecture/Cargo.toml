@@ -1,0 +1,3 @@
+[workspace]
+resolver = "2"
+members = ["domain", "fake_sqlx", "llm_extract", "repository", "search", "web"]

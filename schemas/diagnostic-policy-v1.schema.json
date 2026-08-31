@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/diagnostic-policy-v1.schema.json",
+  "title": "ADRProof diagnostic waiver policy v1",
+  "type": "object",
+  "required": ["schema_version", "waivers"],
+  "properties": {
+    "schema_version": {"const": "adrproof-diagnostic-policy-v1"},
+    "waivers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "finding_id", "owner", "reason", "expires_unix_seconds"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "finding_id": {"type": "string", "minLength": 1},
+          "owner": {"type": "string", "minLength": 1},
+          "reason": {"type": "string", "minLength": 1},
+          "expires_unix_seconds": {"type": "integer", "minimum": 1}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

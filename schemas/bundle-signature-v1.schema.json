@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/bundle-signature-v1.schema.json",
+  "title": "ADRProof bundle signature v1",
+  "type": "object",
+  "required": ["schema_version", "algorithm", "manifest_sha256", "public_key", "key_id", "signature"],
+  "properties": {
+    "schema_version": {"const": "adrproof-bundle-signature-v1"},
+    "algorithm": {"const": "Ed25519"},
+    "manifest_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "public_key": {"type": "string", "minLength": 43, "maxLength": 43},
+    "key_id": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+    "signature": {"type": "string", "minLength": 86, "maxLength": 86}
+  },
+  "additionalProperties": false
+}

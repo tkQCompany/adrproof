@@ -1,0 +1,2 @@
+UNVERIFIED: llm_extract must not be required by the basic synchronous company
+lookup path. Cargo metadata cannot establish a source-level call graph.

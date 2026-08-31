@@ -1,0 +1,36 @@
+# Rust build output
+/target/
+
+# ADRProof generated state and local evidence
+**/.adrproof/
+/.phase*-*/
+/tmp/
+*.sarif
+coverage/
+lcov.info
+
+# Local agent and workspace state
+/.agents/
+/.codex/
+/resume.txt
+
+# Secrets and local configuration
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+*.pfx
+*.jks
+*.keystore
+*signing-key*
+
+# Editors and operating systems
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+/.idea/
+/.vscode/

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/native-test-report-v1.schema.json",
+  "title": "ADRProof normalized native-test report v1",
+  "type": "object",
+  "required": ["schema_version", "runner", "runner_version", "command", "working_directory", "result", "passed", "failed", "skipped", "duration_seconds", "tests", "diagnostics"],
+  "properties": {
+    "schema_version": {"const": "nextest-summary-v1"},
+    "runner": {"type": "string", "minLength": 1},
+    "runner_version": {"type": "string", "minLength": 1},
+    "command": {"type": "string", "minLength": 1},
+    "working_directory": {"type": "string", "minLength": 1},
+    "result": {"enum": ["PASS", "FAIL", "UNKNOWN", "UNVERIFIED", "STALE", "NOT_APPLICABLE", "ERROR"]},
+    "passed": {"type": "integer", "minimum": 0},
+    "failed": {"type": "integer", "minimum": 0},
+    "skipped": {"type": "integer", "minimum": 0},
+    "duration_seconds": {"type": "number", "minimum": 0},
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "status"],
+        "properties": {"name": {"type": "string", "minLength": 1}, "status": {"enum": ["PASS", "FAIL", "SKIP"]}},
+        "additionalProperties": false
+      }
+    },
+    "diagnostics": {"type": "array", "items": {"type": "string"}}
+  },
+  "additionalProperties": false
+}

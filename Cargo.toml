@@ -1,0 +1,26 @@
+[package]
+name = "adrproof"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.98"
+license = "Apache-2.0"
+description = "Deterministic global consistency checker for Architecture Decision Records"
+repository = "https://github.com/tkQCompany/adrproof"
+homepage = "https://github.com/tkQCompany/adrproof"
+readme = "README.md"
+publish = false
+keywords = ["architecture", "adr", "verification", "smt", "ci"]
+categories = ["command-line-utilities", "development-tools"]
+
+[dependencies]
+serde = { version = "1.0.229", features = ["derive"] }
+serde_json = "1.0.150"
+sha2 = "0.10.9"
+base64 = "0.22.1"
+ed25519-dalek = "3.0.0"
+thiserror = "2.0.19"
+pg_query = "=6.2.0"
+quote = "=1.0.47"
+syn = { version = "=2.0.119", features = ["full", "visit"] }
+
+[dev-dependencies]
