@@ -17,6 +17,14 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
   cleanup and expanded negative process-boundary tests.
 - Provider authoring, migration, versioning, threat-model, and release guides.
 
+### Fixed
+
+- External-provider semantic input identities remain stable when operating
+  systems canonicalize a root to a different physical spelling (for example,
+  macOS `/var` to `/private/var`).
+- Targeted Windows conformance runs no longer compile the Unix-only historical
+  regression module.
+
 ### Planned
 
 - Private cross-project pilot using only commit-pinned public ADRProof inputs.

@@ -2224,5 +2224,5 @@ fn conflict_for_key(key: &str, model: &ProjectModel) -> Option<Conflict> {
     })
 }
 
-#[cfg(test)]
+#[cfg(all(test, unix))]
 mod tests;

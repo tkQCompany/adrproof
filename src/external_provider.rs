@@ -292,9 +292,10 @@ fn semantic_input_for_path(roots: &VerificationRoots, path: &Path) -> Result<Sem
                 ),
             )
         })?;
-    if canonical_path.starts_with(&canonical_specification) {
+    if let Ok(relative) = canonical_path.strip_prefix(&canonical_specification) {
+        let logical_path = roots.specification_root.join(relative);
         return Ok(SemanticInput {
-            identity: roots.spec_identity(path),
+            identity: roots.spec_identity(&logical_path),
             path: canonical_path,
         });
     }
@@ -307,9 +308,10 @@ fn semantic_input_for_path(roots: &VerificationRoots, path: &Path) -> Result<Sem
             ),
         )
     })?;
-    if canonical_path.starts_with(&canonical_project) {
+    if let Ok(relative) = canonical_path.strip_prefix(&canonical_project) {
+        let logical_path = roots.project_root.join(relative);
         return Ok(SemanticInput {
-            identity: roots.project_identity(path),
+            identity: roots.project_identity(&logical_path),
             path: canonical_path,
         });
     }
@@ -970,7 +972,7 @@ fn resolve_declared_input(
 mod tests {
     use super::*;
     use crate::roots::VerificationRoots;
-    use std::os::unix::fs::PermissionsExt;
+    use std::os::unix::fs::{PermissionsExt, symlink};
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     static NEXT_DIRECTORY: AtomicUsize = AtomicUsize::new(0);
@@ -1092,6 +1094,24 @@ mod tests {
                 "spec:provider.sh"
             ]
         );
+    }
+
+    #[test]
+    fn semantic_input_identity_is_stable_through_a_symlinked_root() {
+        let roots = test_roots();
+        let parent = roots.project_root.parent().unwrap();
+        let alias = parent.join("specification-alias");
+        symlink(&roots.specification_root, &alias).unwrap();
+        let aliased_roots =
+            VerificationRoots::explicit(&roots.project_root, &alias, &roots.state_root);
+        let logical_path = alias.join("provider.bin");
+        fs::write(&logical_path, "portable provider").unwrap();
+
+        let canonical_path = fs::canonicalize(&logical_path).unwrap();
+        let input = semantic_input_for_path(&aliased_roots, &canonical_path).unwrap();
+
+        assert_eq!(input.identity, "spec:provider.bin");
+        assert_eq!(input.path, canonical_path);
     }
 
     #[test]
