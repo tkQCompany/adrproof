@@ -8,6 +8,13 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## [Unreleased]
 
+### Planned
+
+- Reproducible stable `0.2.0` release artifacts after the beta observation
+  period.
+
+## [0.2.0-beta.1] - 2026-08-31
+
 ### Added
 
 - Portable external-provider conformance fixtures with accepted and rejected
@@ -16,6 +23,7 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - Linux, macOS, and Windows CI, plus platform-specific provider process-tree
   cleanup and expanded negative process-boundary tests.
 - Provider authoring, migration, versioning, threat-model, and release guides.
+- A sanitized beta gate record for the successful commit-pinned private pilot.
 
 ### Fixed
 
@@ -25,9 +33,10 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - Targeted Windows conformance runs no longer compile the Unix-only historical
   regression module.
 
-### Planned
+### Changed
 
-- Private cross-project pilot using only commit-pinned public ADRProof inputs.
+- Protocol v1, its request/response schemas, provider-check report v1, exit
+  behavior, and diagnostic families are frozen for beta compatibility.
 
 ## [0.2.0-alpha.1] - 2026-08-31
 
@@ -58,6 +67,7 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
   Rust-to-Quint correspondence, native-test evidence, bundles, signatures,
   policies, and SARIF.
 
-[Unreleased]: https://github.com/tkQCompany/adrproof/compare/105fb808d91027bae3b42207de14614e4eb54c2e...HEAD
+[Unreleased]: https://github.com/tkQCompany/adrproof/compare/0.2.0-beta.1...HEAD
+[0.2.0-beta.1]: https://github.com/tkQCompany/adrproof/compare/105fb808d91027bae3b42207de14614e4eb54c2e...0.2.0-beta.1
 [0.2.0-alpha.1]: https://github.com/tkQCompany/adrproof/compare/23db11ab5f903308c4ba278a8b3f529a6a4afb91...105fb808d91027bae3b42207de14614e4eb54c2e
 [0.1.0]: https://github.com/tkQCompany/adrproof/commit/23db11ab5f903308c4ba278a8b3f529a6a4afb91

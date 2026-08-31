@@ -41,6 +41,7 @@ English is the canonical language for normative documentation. See
 
 - [`MILESTONE_2_BASELINE.md`](MILESTONE_2_BASELINE.md)
 - [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
+- [`releases/0.2.0-beta.1.md`](releases/0.2.0-beta.1.md)
 - [`landscape.md`](landscape.md)
 
 Customer- or project-specific pilot reports are not part of the initial public

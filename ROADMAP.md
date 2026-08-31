@@ -18,10 +18,11 @@ Status: released as source at commit
 
 ## 0.2 — external provider protocol
 
-Status: public source alpha at commit
-`105fb808d91027bae3b42207de14614e4eb54c2e`, package version
-`0.2.0-alpha.1`. The protocol remains pre-stable until the conformance kit and
-private cross-project pilot are complete.
+Status: beta candidate. The public alpha began at commit
+`105fb808d91027bae3b42207de14614e4eb54c2e`. The conformance kit, portable CI,
+and a private commit-pinned cross-project pilot are now complete. Package
+version `0.2.0-beta.1` freezes protocol v1 and its machine-readable contracts;
+the maintainer still owns publication and tagging.
 
 The milestone makes fact extraction extensible without compiling every provider
 into ADRProof.
@@ -40,7 +41,7 @@ into ADRProof.
 - [x] neutral reference provider and contract tests;
 - [x] publish reproducible provider conformance fixtures for other languages;
 - [x] add an explicit `provider check` conformance command;
-- [ ] run a private cross-project pilot without adding customer-specific code to
+- [x] run a private cross-project pilot without adding customer-specific code to
   the public repository.
 
 ### Release progression
@@ -71,6 +72,9 @@ An external provider cannot produce a current PASS unless it:
 
 ## Later candidates
 
+- a separately versioned provider-check report that can expose semantic input
+  fingerprints and a path/runtime-independent semantic digest without changing
+  report v1;
 - provider conformance kits and a stable SDK surface;
 - additional proof backends through similarly versioned process protocols;
 - richer type-aware code facts without claiming a semantic refinement proof;

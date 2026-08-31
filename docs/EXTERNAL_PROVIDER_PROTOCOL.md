@@ -119,9 +119,9 @@ Stable diagnostic families are:
 | `ADRP-EXTP-500` | fact, coverage, or provenance authority |
 | `ADRP-EXTP-600` | duplicate identity or collision |
 
-Messages provide context and may be clarified during alpha. Automation should
-branch on the report schema, result, exit code, and diagnostic code rather than
-matching complete message text.
+Messages provide non-normative context and may be clarified in compatible
+package releases. Automation should branch on the report schema, result, exit
+code, and diagnostic code rather than matching complete message text.
 
 The runner sorts providers, inputs, facts, artifacts, coverage, and diagnostics
 before merging them into the Project Intent Model. Configuration, executable,

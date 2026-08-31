@@ -27,9 +27,12 @@ fixtures do not change the protocol. A change that adds a required field,
 removes or reinterprets an existing field, broadens authority, or changes
 closed-world semantics requires a new protocol and schema version.
 
-During `0.2.0-alpha.*`, v1 is a release candidate and may still be replaced by a
-new identifier before beta if the conformance suite or private pilot exposes a
-contract defect. From `0.2.0-beta.1`, the published v1 wire contract is frozen.
+During `0.2.0-alpha.*`, v1 was a release candidate that could still be replaced
+if the conformance suite or private pilot exposed a contract defect. From
+`0.2.0-beta.1`, the published v1 wire contract, diagnostic families, exit
+behavior, and provider-check report v1 are frozen. New machine-readable fields
+that are not explicitly permitted by an existing schema require a new schema
+version.
 
 ## Evidence and auxiliary schemas
 

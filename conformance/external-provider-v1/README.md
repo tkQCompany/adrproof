@@ -21,5 +21,5 @@ also checks timeouts, output limits, process cleanup, and executable/input root
 containment.
 
 Fixture acceptance is normative for protocol v1. Human-readable error text is
-diagnostic until the `0.2.0-beta.1` freeze; `error_contains` records the minimum
-stable concept each rejected case must report.
+non-normative; `error_contains` records the minimum stable concept each rejected
+case must communicate, while automation should branch on diagnostic codes.
