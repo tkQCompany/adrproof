@@ -22,10 +22,13 @@ cargo run -- correspondence status [CORRESPONDENCE-ID] --project-root PROJECT --
 cargo run -- native-test list --project-root PROJECT --spec-root SPEC --state-root STATE
 cargo run -- native-test import NATIVE-TEST-ID --report REPORT.json --project-root PROJECT --spec-root SPEC --state-root STATE
 cargo run -- native-test status [NATIVE-TEST-ID] --project-root PROJECT --spec-root SPEC --state-root STATE
+cargo run -- provider check [PROVIDER-ID] --project-root PROJECT --spec-root SPEC --state-root STATE --json
 cargo run -- diagnose --project-root PROJECT --spec-root SPEC --state-root STATE
 cargo run -- bundle create --output NEW_DIRECTORY --project-root PROJECT --spec-root SPEC --state-root STATE
 cargo run -- bundle verify BUNDLE_DIRECTORY --json
 ```
+
+The [roadmap](ROADMAP.md) tracks release authority and current milestone scope.
 
 Read-only/external verification can independently select `--project-root`,
 `--spec-root`, and `--state-root`; see
@@ -50,6 +53,13 @@ When `project_root/migrations` exists, `facts` and `check` also statically analy
 the ordered forward PostgreSQL migration stream with the pinned `pg_query` parser.
 See [the SQL provider contract](docs/SQL_MIGRATION_FACT_PROVIDER.md), especially
 its explicit `Closed`/`Partial` coverage boundary.
+
+ADRProof 0.2 adds explicitly configured external fact providers through a
+versioned JSON process boundary. Provider configuration, executable bytes, and
+declared logical inputs participate in evidence staleness; malformed output,
+timeouts, undeclared inputs, and non-deterministic provenance fail closed. See
+the [external provider protocol](docs/EXTERNAL_PROVIDER_PROTOCOL.md) and its
+[neutral example](examples/external-provider/).
 
 Quint model checking is a specialized external backend with explicit
 formal-model-only authority. TLC exhaustive results, Apalache bounded results,

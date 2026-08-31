@@ -10,6 +10,13 @@ its relevant dependencies and the adapter interpreting its machine-readable resu
 join the trusted computing base. Input hashes, configuration and versions are
 recorded in the proof ledger.
 
+External fact providers are never auto-discovered. Configuration is explicit,
+the executable must live under a selected input root, and protocol v1 accepts
+only deterministic or authoritative provenance. This process boundary limits
+protocol authority and failure propagation; it is not an OS sandbox. A configured
+provider still has the operating-system permissions of ADRProof and must be
+reviewed as trusted code.
+
 This does not mean every trusted component is assumed bug-free. It means a defect
 there can invalidate the verdict, so the component must be small, reviewable,
 tested, pinned, and replaceable where possible. Generated SMT-LIB is retained for

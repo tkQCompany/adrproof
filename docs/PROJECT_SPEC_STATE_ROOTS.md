@@ -19,17 +19,18 @@ adrproof check \
   --state-root /work/example-verification/state
 ```
 
-The same roots apply to `facts`, `status`, `explain`, and `impact`. `facts` only
-reads `project_root`; accepting all roots keeps invocations uniform and exposes
-them in its summary.
+The same roots apply to `facts`, `status`, `explain`, and `impact`. Built-in fact
+providers read `project_root`; configured external providers may read the
+declared files under either input root. All roots remain visible in summaries.
 
 ## Precedence and compatibility
 
 First, the legacy base is the positional root or the current directory. Explicit
 project/spec flags override that base independently. Explicit state overrides the
-legacy `BASE/.adrproof`. There is no root configuration file.
-`adrproof.json`, when present, configures only solver version and timeout; it is
-read first from the specification root and then from the project root.
+legacy `BASE/.adrproof`. There is no root-location configuration file.
+`adrproof.json`, when present, configures solver version, timeout, and explicit
+external providers; it is read first from the specification root and then from
+the project root.
 
 Without flags, `adrproof check .` retains the legacy layout:
 
@@ -108,8 +109,10 @@ ci-artifacts/adrproof-state/       # state_root
 - Legacy `.adrproof` inside the single root remains supported.
 
 Only `state_root` reaches ADRProof write operations. Cargo runs as `cargo metadata
---format-version 1 --no-deps --offline`; ADRProof creates no file under an
-explicitly separate project root.
+--format-version 1 --no-deps --offline`; ADRProof itself creates no file under an
+explicitly separate project root. Configured external providers receive physical
+roots and run with their current directory set to `state_root`, but they are
+trusted executables rather than filesystem-sandboxed processes.
 
 ## Facts summary
 

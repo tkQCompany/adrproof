@@ -37,6 +37,8 @@ struct Cli {
     correspondence_id: Option<String>,
     native_test_action: Option<String>,
     native_test_id: Option<String>,
+    provider_action: Option<String>,
+    provider_id: Option<String>,
     report_path: Option<PathBuf>,
     bundle_action: Option<String>,
     bundle_path: Option<PathBuf>,
@@ -67,12 +69,13 @@ fn parse_cli() -> Result<Cli, Error> {
             | "diagnose"
             | "scenario"
             | "native-test"
+            | "provider"
             | "bundle"
             | "model"
             | "correspondence"
     ) {
         return Err(Error::ProviderFailure(
-            "usage: adrproof <check|facts|explain|impact|status|diagnose|scenario|native-test|bundle|model|correspondence> [list|check|run|import|create|verify|status] [ID|PATH] [--report PATH] [--output PATH] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--signing-key PATH] [--public-key PATH] [--require-signature] [--policy PATH] [--sarif PATH] [--json] [--summary]".into(),
+            "usage: adrproof <check|facts|explain|impact|status|diagnose|scenario|native-test|provider|bundle|model|correspondence> [list|check|run|import|create|verify|status] [ID|PATH] [--report PATH] [--output PATH] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--signing-key PATH] [--public-key PATH] [--require-signature] [--policy PATH] [--sarif PATH] [--json] [--summary]".into(),
         ));
     }
     values.remove(0);
@@ -117,6 +120,10 @@ fn parse_cli() -> Result<Cli, Error> {
     } else if cli.command == "native-test" {
         cli.native_test_action = positional.first().cloned();
         cli.native_test_id = positional.get(1).cloned();
+        cli.legacy_root = positional.get(2).map(PathBuf::from);
+    } else if cli.command == "provider" {
+        cli.provider_action = positional.first().cloned();
+        cli.provider_id = positional.get(1).cloned();
         cli.legacy_root = positional.get(2).map(PathBuf::from);
     } else if cli.command == "bundle" {
         cli.bundle_action = positional.first().cloned();
@@ -181,6 +188,7 @@ fn real_main() -> Result<i32, Error> {
     match cli.command.as_str() {
         "scenario" => scenario_command(&roots, &cli, &version, timeout_ms),
         "native-test" => native_test_command(&roots, &cli),
+        "provider" => provider_command(&roots, &cli),
         "bundle" => bundle_command(&roots, &cli),
         "model" => model_command(&roots, &cli),
         "correspondence" => correspondence_command(&roots, &cli),
@@ -1200,7 +1208,8 @@ fn facts(roots: &VerificationRoots, json: bool, summary: bool) -> Result<i32, Er
         adrproof::sql_migrations::PostgresMigrationFactProvider::discover(&roots.project_root)
             .map(|provider| provider.extract())
             .transpose()?;
-    if cargo.is_none() && sql.is_none() {
+    let external = adrproof::external_provider::run_configured(roots)?;
+    if cargo.is_none() && sql.is_none() && external.is_empty() {
         return Err(Error::ProviderFailure(format!(
             "{} has no supported fact source",
             roots.project_root.display()
@@ -1236,6 +1245,25 @@ fn facts(roots: &VerificationRoots, json: bool, summary: bool) -> Result<i32, Er
                 }),
             );
         }
+        for extracted in &external {
+            let mut counts = BTreeMap::<String, usize>::new();
+            for fact in &extracted.facts {
+                *counts.entry(fact.relation.clone()).or_default() += 1;
+            }
+            providers.insert(
+                format!("ExternalProvider:{}", extracted.provider.id),
+                serde_json::json!({
+                    "protocol": adrproof::external_provider::PROTOCOL_VERSION,
+                    "version": extracted.provider.version,
+                    "executable": extracted.executable,
+                    "elapsed_ms": extracted.elapsed_ms,
+                    "fact_counts": counts,
+                    "coverage": extracted.coverage,
+                    "inputs": extracted.inputs.iter().map(|input| &input.identity).collect::<Vec<_>>(),
+                    "diagnostics": extracted.diagnostics,
+                }),
+            );
+        }
         let value = serde_json::json!({
             "roots": roots.view(),
             "providers": providers,
@@ -1261,14 +1289,60 @@ fn facts(roots: &VerificationRoots, json: bool, summary: bool) -> Result<i32, Er
     } else if json {
         let mut facts = cargo.map_or_else(Vec::new, |value| value.facts);
         facts.extend(sql.map_or_else(Vec::new, |value| value.facts));
+        facts.extend(external.into_iter().flat_map(|value| value.facts));
         facts.sort_by(|a, b| a.id.cmp(&b.id));
         println!("{}", serde_json::to_string_pretty(&facts).unwrap());
     } else {
         let mut facts = cargo.map_or_else(Vec::new, |value| value.facts);
         facts.extend(sql.map_or_else(Vec::new, |value| value.facts));
+        facts.extend(external.into_iter().flat_map(|value| value.facts));
         facts.sort_by(|a, b| a.id.cmp(&b.id));
         for fact in facts {
             println!("{}({})", fact.relation, fact.arguments.join(", "));
+        }
+    }
+    Ok(0)
+}
+
+fn provider_command(roots: &VerificationRoots, cli: &Cli) -> Result<i32, Error> {
+    if cli.provider_action.as_deref() != Some("check") {
+        return Err(Error::ProviderFailure(
+            "usage: adrproof provider check [PROVIDER-ID] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]".into(),
+        ));
+    }
+    let runs = adrproof::external_provider::run_selected(roots, cli.provider_id.as_deref())?;
+    if runs.is_empty() {
+        return Err(Error::ProviderFailure(
+            "no external providers are configured".into(),
+        ));
+    }
+    let report = runs
+        .iter()
+        .map(|run| {
+            serde_json::json!({
+                "provider": run.provider,
+                "protocol": adrproof::external_provider::PROTOCOL_VERSION,
+                "result": "PASS",
+                "elapsed_ms": run.elapsed_ms,
+                "facts": run.facts.len(),
+                "artifacts": run.artifacts.len(),
+                "coverage_claims": run.coverage.len(),
+                "semantic_inputs": run.inputs.iter().map(|input| &input.identity).collect::<Vec<_>>(),
+                "diagnostics": run.diagnostics,
+            })
+        })
+        .collect::<Vec<_>>();
+    if cli.json {
+        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+    } else {
+        for item in report {
+            println!(
+                "{}: PASS ({} facts, {} coverage claims, {} ms)",
+                item["provider"]["id"].as_str().unwrap_or("unknown"),
+                item["facts"],
+                item["coverage_claims"],
+                item["elapsed_ms"]
+            );
         }
     }
     Ok(0)

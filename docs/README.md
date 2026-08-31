@@ -11,6 +11,7 @@ The canonical Architecture Decision Records live in [`adr/`](adr/):
 - [`0003-global-effective-specification.md`](adr/0003-global-effective-specification.md)
 - [`0004-project-intent-ir.md`](adr/0004-project-intent-ir.md)
 - [`0005-fact-coverage-and-immutable-evidence.md`](adr/0005-fact-coverage-and-immutable-evidence.md)
+- [`0006-versioned-external-provider-process.md`](adr/0006-versioned-external-provider-process.md)
 
 English is the canonical language for normative documentation. See
 [`DOCUMENTATION_LANGUAGE.md`](DOCUMENTATION_LANGUAGE.md).
@@ -31,6 +32,7 @@ English is the canonical language for normative documentation. See
 - [`QUINT_MODEL_EVIDENCE.md`](QUINT_MODEL_EVIDENCE.md)
 - [`RUST_QUINT_CORRESPONDENCE.md`](RUST_QUINT_CORRESPONDENCE.md)
 - [`SQL_MIGRATION_FACT_PROVIDER.md`](SQL_MIGRATION_FACT_PROVIDER.md)
+- [`EXTERNAL_PROVIDER_PROTOCOL.md`](EXTERNAL_PROVIDER_PROTOCOL.md)
 
 ## Project context
 

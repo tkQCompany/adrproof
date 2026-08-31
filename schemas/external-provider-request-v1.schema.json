@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://adrproof.dev/schemas/external-provider-request-v1.schema.json",
+  "title": "ADRProof external provider request v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "provider_id",
+    "provider_version",
+    "project_root",
+    "specification_root",
+    "state_root",
+    "parameters"
+  ],
+  "properties": {
+    "schema_version": {"const": "adrproof-external-provider-request-v1"},
+    "provider_id": {"$ref": "#/$defs/providerId"},
+    "provider_version": {"type": "string", "minLength": 1},
+    "project_root": {"type": "string", "minLength": 1},
+    "specification_root": {"type": "string", "minLength": 1},
+    "state_root": {"type": "string", "minLength": 1},
+    "parameters": {
+      "type": "object",
+      "additionalProperties": {"type": "string"}
+    }
+  },
+  "$defs": {
+    "providerId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    }
+  },
+  "additionalProperties": false
+}

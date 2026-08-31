@@ -11,6 +11,7 @@ pub mod bundle;
 pub mod cargo_facts;
 pub mod correspondence;
 pub mod evidence;
+pub mod external_provider;
 pub mod native_test;
 pub mod policy;
 pub mod project;
@@ -1691,6 +1692,46 @@ pub fn load_project_model_with_roots(
         model.facts.extend(sql_model.facts);
         model.edges.extend(sql_model.edges);
     }
+    for external in external_provider::run_configured(roots)? {
+        model.provider_inputs.insert(
+            external.provider.id.clone(),
+            external
+                .inputs
+                .iter()
+                .map(|input| input.identity.clone())
+                .collect(),
+        );
+        input_files.extend(external.inputs);
+        model.fact_coverage.extend(external.coverage);
+        let mut external_model = ProjectModel::default();
+        for artifact in external.artifacts {
+            if model.artifacts.contains_key(&artifact.id)
+                || external_model.artifacts.contains_key(&artifact.id)
+            {
+                return Err(Error::ProviderFailure(format!(
+                    "external provider `{}` artifact id `{}` collides with another artifact",
+                    external.provider.id, artifact.id.0
+                )));
+            }
+            external_model
+                .artifacts
+                .insert(artifact.id.clone(), artifact);
+        }
+        for fact in &external.facts {
+            if model.facts.contains_key(&fact.id) {
+                return Err(Error::ProviderFailure(format!(
+                    "external provider `{}` fact id `{}` collides with another fact",
+                    external.provider.id, fact.id.0
+                )));
+            }
+        }
+        external_model.add_facts(external.facts);
+        for artifact in external_model.artifacts.into_values() {
+            model.artifacts.insert(artifact.id.clone(), artifact);
+        }
+        model.facts.extend(external_model.facts);
+        model.edges.extend(external_model.edges);
+    }
     apply_generic_closed_world_facts(&mut model);
     model.normalize();
     input_files.sort_by(|a, b| (&a.identity, &a.path).cmp(&(&b.identity, &b.path)));
@@ -1808,6 +1849,13 @@ pub(crate) fn relevant_semantic_inputs(
     let uses_sql = model.fact_coverage.iter().any(|coverage| {
         coverage.provider == "postgres_migrations" && used_relations.contains(&coverage.relation)
     });
+    let provider_inputs = model
+        .fact_coverage
+        .iter()
+        .filter(|coverage| used_relations.contains(&coverage.relation))
+        .filter_map(|coverage| model.provider_inputs.get(&coverage.provider))
+        .flatten()
+        .collect::<BTreeSet<_>>();
     let identities = model
         .constraints
         .values()
@@ -1826,6 +1874,7 @@ pub(crate) fn relevant_semantic_inputs(
         .iter()
         .filter(|input| {
             identities.contains(&input.identity)
+                || provider_inputs.contains(&input.identity)
                 || (uses_sql
                     && input.identity.starts_with("project:migrations/")
                     && input.identity.ends_with(".sql"))

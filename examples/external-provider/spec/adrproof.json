@@ -1,0 +1,17 @@
+{
+  "z3_version": "4.13.4",
+  "timeout_ms": 10000,
+  "external_providers": [
+    {
+      "id": "component-manifest",
+      "protocol": "adrproof-external-provider-v1",
+      "version": "1.0.0",
+      "executable": "providers/component_provider.py",
+      "args": [],
+      "timeout_ms": 5000,
+      "parameters": {
+        "manifest": "component.json"
+      }
+    }
+  ]
+}

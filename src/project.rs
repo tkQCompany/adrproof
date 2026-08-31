@@ -257,6 +257,8 @@ pub struct ProjectModel {
     pub facts: BTreeMap<FactId, ProjectFact>,
     pub declarations: Vec<IntentDeclaration>,
     pub fact_coverage: Vec<FactCoverage>,
+    #[serde(default)]
+    pub provider_inputs: BTreeMap<String, BTreeSet<String>>,
     pub edges: Vec<GraphEdge>,
 }
 

@@ -16,9 +16,10 @@ valid substitute. Superseded and deprecated decisions stay queryable as history,
 but only accepted (and, by policy, proposed when enabled) decisions surviving
 lifecycle resolution contribute clauses.
 
-ADRLogic is a frontend, not the core IR. Cargo metadata and future artifact
-frontends add independently-provenanced nodes and facts to the Project Intent
-Model. Specialized proof artifacts may remain opaque.
+ADRLogic is a frontend, not the core IR. Cargo metadata, PostgreSQL migrations,
+and configured external-provider v1 processes add independently-provenanced
+nodes and facts to the Project Intent Model. Specialized proof artifacts may
+remain opaque.
 
 The core API separates `ConstraintBackend`, `CodeFactProvider`,
 `RustProofProvider`, and `TemporalProofProvider`. Provider results carry capability,
@@ -57,6 +58,11 @@ preserved. Absence yields UNVERIFIED. Absolute checkout paths are normalized awa
 Backend version and the semantic configuration (`timeout_ms` and core-minimization
 flags) also participate in validity. Corrupt evidence fails the query safely. The
 JSON proof ledger embeds the newest evidence while history remains append-only.
+
+For a relevant external-provider relation, the provider configuration,
+executable, and every declared logical input are selected together as semantic
+inputs. This prevents an unchanged extracted tuple from hiding a changed
+extractor or completeness boundary.
 
 Exit codes are 0 for current SAT/PASS, 1 for UNSAT/FAIL, 2 for invalid input or I/O,
 3 for UNKNOWN, 4 for timeout, 5 for solver failure, and 6 for fact-provider failure.
