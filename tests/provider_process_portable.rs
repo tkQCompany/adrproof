@@ -56,6 +56,37 @@ fn native_provider_process_contract_is_portable() {
         ]
     );
 
+    let cli = Command::new(env!("CARGO_BIN_EXE_adrproof"))
+        .args(["provider", "check", "portable-fixture", "--project-root"])
+        .arg(&project)
+        .arg("--spec-root")
+        .arg(&specification)
+        .arg("--state-root")
+        .arg(&state)
+        .arg("--json")
+        .output()
+        .unwrap();
+    assert!(
+        cli.status.success(),
+        "provider check failed: {}",
+        String::from_utf8_lossy(&cli.stderr)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&cli.stdout).unwrap();
+    assert_eq!(
+        report["schema_version"],
+        "adrproof-provider-check-report-v1"
+    );
+    assert_eq!(report["result"], "PASS");
+    assert_eq!(report["providers"][0]["provider"]["id"], "portable-fixture");
+    assert_eq!(
+        report["providers"][0]["semantic_inputs"],
+        serde_json::json!([
+            "project:input.txt",
+            "spec:adrproof.json",
+            format!("spec:portable-provider{}", std::env::consts::EXE_SUFFIX)
+        ])
+    );
+
     configure(&specification, &executable, "malformed", 2_000);
     assert_code(
         run_selected(&roots, Some("portable-fixture")).unwrap_err(),

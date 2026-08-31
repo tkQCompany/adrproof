@@ -99,3 +99,10 @@ project's disclosure and contribution policy.
 
 ADRProof is licensed under the [Apache License 2.0](LICENSE). Attribution
 information accompanying distributions is recorded in [NOTICE](NOTICE).
+
+## Distribution
+
+ADRProof is distributed as source through GitHub tags and releases. It is not
+published to crates.io, and the Cargo manifest sets `publish = false` so that
+`cargo publish` refuses the package. `cargo package` may still be used locally
+to verify the exact source archive without uploading it.

@@ -13,6 +13,8 @@
   integration lock data.
 - [ ] `CHANGELOG.md`, `ROADMAP.md`, package version, and `Cargo.lock` agree.
 - [ ] CI passes on Linux, macOS, and Windows.
+- [ ] `Cargo.toml` still declares `publish = false`; no crates.io publication is
+  attempted or configured.
 - [ ] The maintainer performs the push and creates the release/tag.
 
 ## Beta gate

@@ -8,6 +8,7 @@ description = "Deterministic global consistency checker for Architecture Decisio
 repository = "https://github.com/tkQCompany/adrproof"
 homepage = "https://github.com/tkQCompany/adrproof"
 readme = "README.md"
+# ADRProof is distributed as source through GitHub tags and releases only.
 publish = false
 keywords = ["architecture", "adr", "verification", "smt", "ci"]
 categories = ["command-line-utilities", "development-tools"]

@@ -13,6 +13,12 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - Reproducible stable `0.2.0` release artifacts after the beta observation
   period.
 
+### Changed
+
+- CI now enforces the source-only `publish = false` policy and the portable
+  provider test exercises the real versioned `provider check --json` CLI on
+  every supported runner.
+
 ## [0.2.0-beta.1] - 2026-08-31
 
 ### Added
