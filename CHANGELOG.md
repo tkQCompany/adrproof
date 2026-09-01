@@ -18,6 +18,9 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - CI now enforces the source-only `publish = false` policy and the portable
   provider test exercises the real versioned `provider check --json` CLI on
   every supported runner.
+- Stable releases have a deterministic source-archive generator, a CI
+  reproducibility gate, and an explicit supported-platform and limitations
+  matrix. No binary or crates.io distribution is introduced.
 
 ## [0.2.0-beta.1] - 2026-08-31
 

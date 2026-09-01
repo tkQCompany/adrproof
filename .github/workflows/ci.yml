@@ -24,6 +24,14 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Run Clippy
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
+      - name: Verify reproducible source archive
+        run: |
+          first="$(mktemp -d)"
+          second="$(mktemp -d)"
+          ./scripts/build-source-release.sh HEAD "$first"
+          ./scripts/build-source-release.sh HEAD "$second"
+          cmp "$first"/*-source.tar.gz "$second"/*-source.tar.gz
+          cmp "$first"/*-source.tar.gz.sha256 "$second"/*-source.tar.gz.sha256
 
   test-linux:
     name: Full test suite (ubuntu-latest)

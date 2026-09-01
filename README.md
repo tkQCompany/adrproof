@@ -32,6 +32,8 @@ The [roadmap](ROADMAP.md) tracks release authority and current milestone scope.
 Release history is recorded in the [changelog](CHANGELOG.md), while package,
 protocol, and schema compatibility are defined in
 [versioning](docs/VERSIONING.md).
+Supported environments and their tested scope are listed in
+[supported platforms](docs/SUPPORTED_PLATFORMS.md).
 
 Read-only/external verification can independently select `--project-root`,
 `--spec-root`, and `--state-root`; see
@@ -105,4 +107,6 @@ information accompanying distributions is recorded in [NOTICE](NOTICE).
 ADRProof is distributed as source through GitHub tags and releases. It is not
 published to crates.io, and the Cargo manifest sets `publish = false` so that
 `cargo publish` refuses the package. `cargo package` may still be used locally
-to verify the exact source archive without uploading it.
+to verify its source selection without uploading it. Stable releases use the
+reproducible source-only archive process documented in
+[source releases](docs/SOURCE_RELEASES.md).

@@ -30,6 +30,11 @@
 
 - [ ] No release-blocking protocol defect remains.
 - [ ] Only compatible fixes were made after beta.
-- [ ] Release artifacts and SHA-256 sums are reproducible.
-- [ ] Supported platforms and known limitations are explicit.
+- [ ] The source archive is generated twice from the release tag with
+  `scripts/build-source-release.sh`; both archives and checksum files are
+  byte-for-byte identical.
+- [ ] The generated archive and its `.sha256` file are attached to the matching
+  stable GitHub Release; no project-produced binary is attached.
+- [ ] Supported platforms and known limitations agree with
+  `docs/SUPPORTED_PLATFORMS.md` and current CI.
 - [ ] The `0.2.0` GitHub milestone is complete.
