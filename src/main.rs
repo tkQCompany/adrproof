@@ -3,17 +3,36 @@ use adrproof::{Error, Verdict, Z3Backend, cargo_facts::CargoMetadataProvider};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+const COMMANDS: &[&str] = &[
+    "check",
+    "facts",
+    "explain",
+    "impact",
+    "status",
+    "diagnose",
+    "scenario",
+    "native-test",
+    "provider",
+    "bundle",
+    "model",
+    "correspondence",
+];
+
 fn main() {
-    let code = match real_main() {
-        Ok(c) => c,
-        Err(e) => {
-            let arguments = std::env::args().collect::<Vec<_>>();
-            let provider_json_requested = arguments.get(1).map(String::as_str) == Some("provider")
-                && arguments.iter().any(|argument| argument == "--json");
-            if let Error::ExternalProviderFailure { code, message } = &e
-                && provider_json_requested
-            {
-                eprintln!(
+    let code = if print_requested_help() {
+        0
+    } else {
+        match real_main() {
+            Ok(c) => c,
+            Err(e) => {
+                let arguments = std::env::args().collect::<Vec<_>>();
+                let provider_json_requested = arguments.get(1).map(String::as_str)
+                    == Some("provider")
+                    && arguments.iter().any(|argument| argument == "--json");
+                if let Error::ExternalProviderFailure { code, message } = &e
+                    && provider_json_requested
+                {
+                    eprintln!(
                     "{}",
                     serde_json::to_string_pretty(&serde_json::json!({
                         "schema_version": adrproof::external_provider::CHECK_REPORT_SCHEMA_VERSION,
@@ -24,20 +43,93 @@ fn main() {
                     }))
                     .expect("external provider error report serialization")
                 );
-            } else {
-                eprintln!("ERROR — {e}");
-            }
-            match e {
-                Error::Timeout(_) => 4,
-                Error::SolverMissing(_) | Error::SolverVersion { .. } | Error::SolverFailure(_) => {
-                    5
+                } else {
+                    eprintln!("ERROR — {e}");
                 }
-                Error::ProviderFailure(_) | Error::ExternalProviderFailure { .. } => 6,
-                Error::Io { .. } | Error::Diagnostic { .. } | Error::InvalidReference { .. } => 2,
+                match e {
+                    Error::Timeout(_) => 4,
+                    Error::SolverMissing(_)
+                    | Error::SolverVersion { .. }
+                    | Error::SolverFailure(_) => 5,
+                    Error::ProviderFailure(_) | Error::ExternalProviderFailure { .. } => 6,
+                    Error::Io { .. }
+                    | Error::Diagnostic { .. }
+                    | Error::InvalidReference { .. } => 2,
+                }
             }
         }
     };
     std::process::exit(code);
+}
+
+fn print_requested_help() -> bool {
+    let arguments = std::env::args().skip(1).collect::<Vec<_>>();
+    match arguments.as_slice() {
+        [flag, ..] if flag == "--help" || flag == "-h" => {
+            print_help(None);
+            true
+        }
+        [command, rest @ ..]
+            if COMMANDS.contains(&command.as_str())
+                && rest
+                    .iter()
+                    .any(|argument| argument == "--help" || argument == "-h") =>
+        {
+            print_help(Some(command));
+            true
+        }
+        _ => false,
+    }
+}
+
+fn print_help(command: Option<&str>) {
+    let usage = match command {
+        None => {
+            println!(
+                "Usage: adrproof COMMAND [OPTIONS]\n\nCommands:\n  {}\n\nRun 'adrproof COMMAND --help' for command-specific syntax.",
+                COMMANDS.join("\n  ")
+            );
+            return;
+        }
+        Some("check") => {
+            "adrproof check [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--policy PATH] [--sarif PATH] [--json]"
+        }
+        Some("facts") => {
+            "adrproof facts [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json] [--summary]"
+        }
+        Some("explain") => {
+            "adrproof explain ID [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
+        }
+        Some("impact") => {
+            "adrproof impact --path PATH [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
+        }
+        Some("status") => {
+            "adrproof status [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
+        }
+        Some("diagnose") => {
+            "adrproof diagnose [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
+        }
+        Some("scenario") => {
+            "adrproof scenario <list|run ID|status [ID]> [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH]"
+        }
+        Some("native-test") => {
+            "adrproof native-test <list|import ID --report PATH|status [ID]> [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH]"
+        }
+        Some("provider") => {
+            "adrproof provider check [PROVIDER-ID] [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json] [--summary]"
+        }
+        Some("bundle") => {
+            "adrproof bundle <create --output PATH|verify PATH> [ROOT] [--signing-key PATH] [--public-key PATH] [--require-signature] [--json]"
+        }
+        Some("model") => {
+            "adrproof model <list|check ID|validate [ID]|status [ID]> [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH]"
+        }
+        Some("correspondence") => {
+            "adrproof correspondence <list|check ID|status [ID]> [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH]"
+        }
+        Some(_) => unreachable!("command list and help must stay synchronized"),
+    };
+    println!("Usage: {usage}");
 }
 
 #[derive(Default)]
@@ -78,21 +170,7 @@ fn parse_cli() -> Result<Cli, Error> {
         command: values.first().cloned().unwrap_or_default(),
         ..Cli::default()
     };
-    if !matches!(
-        cli.command.as_str(),
-        "check"
-            | "facts"
-            | "explain"
-            | "impact"
-            | "status"
-            | "diagnose"
-            | "scenario"
-            | "native-test"
-            | "provider"
-            | "bundle"
-            | "model"
-            | "correspondence"
-    ) {
+    if !COMMANDS.contains(&cli.command.as_str()) {
         return Err(Error::ProviderFailure(
             "usage: adrproof <check|facts|explain|impact|status|diagnose|scenario|native-test|provider|bundle|model|correspondence> [list|check|run|import|create|verify|status] [ID|PATH] [--report PATH] [--output PATH] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--signing-key PATH] [--public-key PATH] [--require-signature] [--policy PATH] [--sarif PATH] [--json] [--summary]".into(),
         ));

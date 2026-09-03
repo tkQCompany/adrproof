@@ -71,7 +71,11 @@ fn native_provider_process_contract_is_portable() {
         "provider check failed: {}",
         String::from_utf8_lossy(&cli.stderr)
     );
-    let report: serde_json::Value = serde_json::from_slice(&cli.stdout).unwrap();
+    let report_text = String::from_utf8(cli.stdout).unwrap();
+    assert!(!report_text.contains(&root.to_string_lossy().to_string()));
+    assert!(!report_text.contains(&project.to_string_lossy().to_string()));
+    assert!(!report_text.contains(&specification.to_string_lossy().to_string()));
+    let report: serde_json::Value = serde_json::from_str(&report_text).unwrap();
     assert_eq!(
         report["schema_version"],
         "adrproof-provider-check-report-v1"
@@ -85,6 +89,17 @@ fn native_provider_process_contract_is_portable() {
             "spec:adrproof.json",
             format!("spec:portable-provider{}", std::env::consts::EXE_SUFFIX)
         ])
+    );
+    assert!(
+        report["providers"][0]["semantic_inputs"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|input| {
+                input.as_str().is_some_and(|value| {
+                    value.starts_with("project:") || value.starts_with("spec:")
+                })
+            })
     );
 
     configure(&specification, &executable, "malformed", 2_000);

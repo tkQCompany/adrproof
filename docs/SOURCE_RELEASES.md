@@ -4,9 +4,9 @@ ADRProof is distributed as source through GitHub. It is not published to
 crates.io and does not ship project-produced binary artifacts.
 
 GitHub automatically exposes source snapshots for every tag. Stable releases
-also attach a project-produced `tar.gz` archive and a SHA-256 checksum so that a
-consumer can verify a named, reproducible artifact independently of GitHub's
-snapshot service.
+also attach a project-produced `tar.gz` archive, a SHA-256 checksum, and a
+release manifest so that a consumer can verify a named, reproducible artifact
+independently of GitHub's snapshot service.
 
 ## Build
 
@@ -25,10 +25,16 @@ header metadata.
 The command creates:
 
 - `adrproof-VERSION-source.tar.gz`;
-- `adrproof-VERSION-source.tar.gz.sha256`.
+- `adrproof-VERSION-source.tar.gz.sha256`;
+- `adrproof-VERSION-release-manifest.json` containing the full Git commit and
+  tree identities plus the archive digest.
 
 The archive is a source distribution, not a Cargo registry package. Running the
 generator never invokes `cargo publish` or communicates with crates.io.
+The generator rejects a version tag that disagrees with `Cargo.toml`, a manifest
+that does not declare `publish = false`, and tracked paths associated with build
+output, local evidence, environment secrets, or private keys. It does not hide
+tracked files silently: an unsafe tree fails the release.
 
 ## Reproducibility gate
 
@@ -43,11 +49,14 @@ cmp "$first/adrproof-0.2.0-source.tar.gz" \
   "$second/adrproof-0.2.0-source.tar.gz"
 cmp "$first/adrproof-0.2.0-source.tar.gz.sha256" \
   "$second/adrproof-0.2.0-source.tar.gz.sha256"
+cmp "$first/adrproof-0.2.0-release-manifest.json" \
+  "$second/adrproof-0.2.0-release-manifest.json"
 ```
 
-CI applies the same two-build comparison to every proposed change. Before a
-stable release, the maintainer repeats it for the annotated release tag and
-uploads both generated files to the matching GitHub Release.
+CI applies the same two-build comparison and negative preflight tests to every
+proposed change. Before a stable release, the maintainer repeats it for the
+annotated release tag and uploads all three generated files to the matching
+GitHub Release.
 
 ## Verify
 

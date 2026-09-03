@@ -5,28 +5,28 @@ specifications. Its first milestone checks the global consistency of formal clau
 embedded in Markdown ADRs. It does not use an LLM in its verification core and it
 does not attempt to model the semantics of Rust.
 
+## Quick start
+
+The following commands run from a clean checkout and are continuously exercised
+by CI. The first inspects a neutral Rust workspace. The second invokes the
+neutral external-provider example while keeping generated state outside the
+source tree.
+
 ```sh
-cargo run -- check examples/database-architecture
-cargo run -- check examples/database-architecture --json
-cargo run -- facts examples/rust-workspace-architecture --json
-cargo run -- facts --project-root examples/rust-workspace-architecture --summary --json
-cargo run -- explain ADR-0100:C1 examples/rust-workspace-architecture --json
-cargo run -- impact --path examples/rust-workspace-architecture/domain/Cargo.toml examples/rust-workspace-architecture --json
-cargo run -- status examples/rust-workspace-architecture --json
-cargo run -- model list --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- model check MODEL-CHECK-ID --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- model validate --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- correspondence list --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- correspondence check CORRESPONDENCE-ID --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- correspondence status [CORRESPONDENCE-ID] --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- native-test list --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- native-test import NATIVE-TEST-ID --report REPORT.json --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- native-test status [NATIVE-TEST-ID] --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- provider check [PROVIDER-ID] --project-root PROJECT --spec-root SPEC --state-root STATE --json
-cargo run -- diagnose --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- bundle create --output NEW_DIRECTORY --project-root PROJECT --spec-root SPEC --state-root STATE
-cargo run -- bundle verify BUNDLE_DIRECTORY --json
+cargo run --locked -- facts examples/rust-workspace-architecture --json
+
+state="$(mktemp -d)"
+cargo run --locked -- provider check component-manifest --json \
+  --project-root examples/external-provider/project \
+  --spec-root examples/external-provider/spec \
+  --state-root "$state"
 ```
+
+Run `cargo run --locked -- --help` for the complete command list and
+`cargo run --locked -- COMMAND --help` for command-specific syntax. Checks that
+use ADRLogic require the configured Z3 version; specialized model, scenario,
+correspondence, and native-test commands also require their declared project
+definitions and tools.
 
 The [roadmap](ROADMAP.md) tracks release authority and current milestone scope.
 Release history is recorded in the [changelog](CHANGELOG.md), while package,
@@ -34,6 +34,8 @@ protocol, and schema compatibility are defined in
 [versioning](docs/VERSIONING.md).
 Supported environments and their tested scope are listed in
 [supported platforms](docs/SUPPORTED_PLATFORMS.md).
+The executable quick-start commands and internal documentation links are
+rechecked from a clean clone by the CI documentation smoke test.
 
 Read-only/external verification can independently select `--project-root`,
 `--spec-root`, and `--state-root`; see

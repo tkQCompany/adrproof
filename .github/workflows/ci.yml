@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install pinned Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal --component clippy --component rustfmt
       - name: Enforce source-only distribution
@@ -24,25 +24,25 @@ jobs:
         run: cargo fmt --all -- --check
       - name: Run Clippy
         run: cargo clippy --locked --all-targets --all-features -- -D warnings
-      - name: Verify reproducible source archive
-        run: |
-          first="$(mktemp -d)"
-          second="$(mktemp -d)"
-          ./scripts/build-source-release.sh HEAD "$first"
-          ./scripts/build-source-release.sh HEAD "$second"
-          cmp "$first"/*-source.tar.gz "$second"/*-source.tar.gz
-          cmp "$first"/*-source.tar.gz.sha256 "$second"/*-source.tar.gz.sha256
+      - name: Check internal documentation links
+        run: python3 scripts/check-markdown-links.py
+      - name: Check workflow permissions and action pins
+        run: python3 scripts/check-workflow-policy.py
+      - name: Test reproducible source release tooling
+        run: scripts/test-source-release.sh
 
   test-linux:
     name: Full test suite (ubuntu-latest)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install minimum supported Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal
       - name: Run full test suite
         run: cargo test --locked --all-targets
+      - name: Verify documented commands from a clean checkout
+        run: scripts/test-clean-checkout.sh
 
   portable-provider:
     name: Provider protocol (${{ matrix.os }})
@@ -53,7 +53,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install minimum supported Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal
       - name: Run response conformance fixtures
@@ -66,10 +66,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install pinned Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal
       - name: Install cargo-audit
         run: cargo install cargo-audit --version 0.22.2 --locked
       - name: Audit Cargo.lock
         run: cargo audit --deny warnings
+      - name: Check dependency licenses
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check licenses
+          rust-version: "1.98.0"

@@ -41,6 +41,7 @@ English is the canonical language for normative documentation. See
 
 - [`MILESTONE_2_BASELINE.md`](MILESTONE_2_BASELINE.md)
 - [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
+- [`STABLE_0_2_RUNBOOK.md`](STABLE_0_2_RUNBOOK.md)
 - [`SOURCE_RELEASES.md`](SOURCE_RELEASES.md)
 - [`SUPPORTED_PLATFORMS.md`](SUPPORTED_PLATFORMS.md)
 - [`releases/0.2.0-beta.1.md`](releases/0.2.0-beta.1.md)

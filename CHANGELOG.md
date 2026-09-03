@@ -21,6 +21,10 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - Stable releases have a deterministic source-archive generator, a CI
   reproducibility gate, and an explicit supported-platform and limitations
   matrix. No binary or crates.io distribution is introduced.
+- Release archives now include deterministic commit/tree manifests and reject
+  unsafe tracked paths, mismatched version tags, or publishable Cargo metadata.
+- CI validates clean-checkout documentation, command help, dependency licenses,
+  and CodeQL results; every third-party GitHub Action is pinned by full commit.
 
 ## [0.2.0-beta.1] - 2026-08-31
 
