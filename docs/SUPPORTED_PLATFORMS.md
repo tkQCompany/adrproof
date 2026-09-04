@@ -16,6 +16,18 @@ The runner labels identify the environments exercised by CI; they do not
 promise a particular CPU architecture or operating-system release beyond the
 images currently supplied under those labels.
 
+### Pending coverage expansion
+
+The next CI run additionally exercises all library tests and CLI help on macOS
+and Windows, plus the reference-provider CLI suite on macOS. POSIX shell-backed
+library fixtures are explicitly Unix-only; parser, dependency, migration, and
+evidence-freshness regressions now compile on Windows too. The pinned minimum
+Rust version is used for these jobs, not a floating stable toolchain.
+
+This is configured coverage, not yet evidence of a successful remote run. Keep
+the support levels above until the expanded jobs pass for the published commit.
+Windows still does not exercise the POSIX execution backends.
+
 ## Toolchain and external programs
 
 - Rust `1.98.0` is the minimum and pinned CI toolchain for the 0.2 line.

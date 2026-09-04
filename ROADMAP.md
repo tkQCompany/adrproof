@@ -70,6 +70,44 @@ An external provider cannot produce a current PASS unless it:
 5. emits only deterministic or authoritative provenance;
 6. makes every completeness claim explicit through scoped coverage.
 
+## Near-term delivery and CI adoption
+
+The remaining 0.2 work is tracked below. A checked preparation item does not
+imply that a consuming project has enabled CI or that stable has been released.
+
+- [x] Configure broader macOS library/CLI coverage and Windows core regressions;
+  isolate POSIX execution fixtures and keep Rust 1.98.0 as the tested minimum.
+- [ ] Confirm the expanded platform jobs and CodeQL on the exact pushed commit;
+  only then update the supported-platform claims.
+- [x] Provide environment/reproducibility issue forms and an explicit compatible
+  patch policy without changing frozen v1 contracts.
+- [x] Provide beta-gate and isolated-pilot review templates.
+- [x] Document a neutral CI adoption contract covering pins, rules, non-vacuity,
+  fail-closed behavior, private evidence, promotion and rollback.
+- [ ] Review branch protection using authenticated maintainer access. The
+  unauthenticated API returned 401 on 2026-09-04, not a verified protection state.
+- [ ] Create and populate the `0.2.0` milestone; the public milestone list was
+  empty on 2026-09-04. Resolve release metadata during the maintainer handoff.
+- [ ] Obtain consuming-controller approval of an exact repeat-pilot pin set,
+  required clauses, coverage and negative controls; preserve historical locks.
+- [ ] Execute the isolated repeat pilot and review a sanitized result.
+- [ ] Complete the beta observation window and stable-release gates. The beta
+  was published at 2026-08-31 20:17:59 UTC; fourteen days elapse on
+  2026-09-14 at 20:17:59 UTC, not at the start of that day.
+- [ ] Prepare the stable release candidate, then hand push/tag/publication to
+  the maintainer following the release runbook.
+- [ ] Obtain separate approval for a private shadow CI job; keep actual failed
+  verification results visible without making the check required yet.
+- [ ] Evaluate repeatability, rule-negative controls, artifact handling and
+  resource budgets before proposing a required merge check.
+- [ ] Treat any deployment use as a separate owner decision tied to the exact
+  promoted artifact; architectural consistency is not release authorization.
+
+See [`docs/CI_ADOPTION.md`](docs/CI_ADOPTION.md) for the adoption contract and
+[`docs/STABLE_0_2_RUNBOOK.md`](docs/STABLE_0_2_RUNBOOK.md) for the stable gate.
+CI preparation and approved manual pilots may proceed during beta observation;
+neither requires an incompatible protocol/report extension.
+
 ## Later candidates
 
 - a separately versioned provider-check report that can expose semantic input

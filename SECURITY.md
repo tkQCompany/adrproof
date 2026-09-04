@@ -5,6 +5,11 @@
 ADRProof is currently pre-1.0. Security fixes are applied to the latest release
 and the default branch. Older development snapshots are not supported.
 
+The currently published line is 0.2.0-beta.1; stable 0.2.0 has not been issued.
+On release of stable 0.2.0, the latest 0.2.x replaces the beta as the supported
+release. A new minor line requires an explicit update to this support policy;
+there is no implied long-term support commitment for older snapshots.
+
 ## Reporting a vulnerability
 
 Do not disclose a suspected vulnerability, credential, private evidence bundle,

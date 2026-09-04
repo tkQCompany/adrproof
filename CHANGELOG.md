@@ -15,6 +15,13 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Changed
 
+- Portable CI now includes library and command-help regressions; POSIX execution
+  fixtures are explicitly separated from platform-neutral core tests. Expanded
+  macOS/Windows coverage awaits its first remote run.
+- CI adoption guidance separates provider conformance from an architectural
+  gate, with explicit input pins, negative controls, and staged approval.
+- Beta and isolated-pilot review templates, reproducibility issue reporting,
+  and the 0.2 maintenance/security policy clarify release readiness.
 - CI now enforces the source-only `publish = false` policy and the portable
   provider test exercises the real versioned `provider check --json` CLI on
   every supported runner.

@@ -29,7 +29,9 @@ to obtain a release.
 3. Set the Cargo package version to `0.2.0` and update `Cargo.lock` without
    publishing or contacting a registry unnecessarily.
 4. Move the accumulated changelog entries into a dated `0.2.0` section.
-5. Update `ROADMAP.md`, supported-platform documentation, and the release record.
+5. Update `ROADMAP.md`, supported-platform documentation, `SECURITY.md` supported
+   versions, and the release record using
+   [`releases/BETA_REVIEW_TEMPLATE.md`](releases/BETA_REVIEW_TEMPLATE.md).
 6. Run:
 
    ```sh

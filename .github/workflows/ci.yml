@@ -56,8 +56,13 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Install minimum supported Rust toolchain
         run: rustup toolchain install 1.98.0 --profile minimal
-      - name: Run response conformance fixtures
-        run: cargo test --locked --lib external_provider::conformance_tests
+      - name: Run library regressions and response conformance
+        run: cargo test --locked --lib
+      - name: Run CLI help regression tests
+        run: cargo test --locked --test cli_help
+      - name: Run reference-provider CLI tests (macOS)
+        if: runner.os == 'macOS'
+        run: cargo test --locked --test provider_cli
       - name: Run native provider process contract
         run: cargo test --locked --test provider_process_portable
 

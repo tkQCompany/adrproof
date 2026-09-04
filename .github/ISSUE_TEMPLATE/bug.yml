@@ -23,7 +23,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: OS, Rust version, backend/provider versions, and relevant configuration.
+      description: Include OS and architecture, rustc --version, cargo --version, z3 --version (or not used), provider identity/version, and relevant configuration.
     validations:
       required: true
   - type: checkboxes
