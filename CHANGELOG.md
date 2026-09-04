@@ -8,6 +8,17 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## [Unreleased]
 
+### Fixed
+
+- Relevant Cargo manifest fingerprints now use root-relative identities even
+  when Cargo canonicalizes an aliased project root (for example `/var` on
+  macOS). Manifest edits correctly stale evidence instead of leaving a false
+  current PASS. Rerun affected verification; historical evidence is not rewritten.
+- Evidence stores use portable filenames without the colon in logical IDs,
+  fixing Windows write failures across consistency, scenario, native-test,
+  model, model-validation and correspondence evidence. JSON IDs remain unchanged;
+  existing colon-named files remain readable on filesystems supporting them.
+
 ### Planned
 
 - Reproducible stable `0.2.0` release artifacts after the beta observation

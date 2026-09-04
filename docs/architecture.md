@@ -51,7 +51,11 @@ source is not parsed.
 Immutable evidence records a proof-obligation ID, backend identity/version, configuration
 fingerprint, ordered content hashes of ADR and Cargo manifest inputs, the generated
 obligation hash, historic result, current validity, timestamp, and diagnostics.
-Files are atomically appended under `.adrproof/evidence/<evidence-id>.json`.
+Files are atomically appended under `.adrproof/evidence/<storage-stem>.json`.
+The storage stem replaces the colon in the generated evidence ID with a hyphen
+for Windows-compatible filenames; the logical ID inside JSON is unchanged.
+Readers also accept historical colon-named JSON files on filesystems that support
+those names. No existing evidence file is renamed or rewritten by this correction.
 Comparing current fingerprints with stored evidence yields PASS/FAIL only
 when they match; otherwise current validity is STALE while the historic result is
 preserved. Absence yields UNVERIFIED. Absolute checkout paths are normalized away.

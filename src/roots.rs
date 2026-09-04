@@ -67,7 +67,25 @@ impl VerificationRoots {
 }
 
 fn identity(namespace: &str, root: &Path, path: &Path) -> String {
-    let relative = path.strip_prefix(root).unwrap_or(path);
+    // Cargo may return canonical paths even when the caller used an alias
+    // (notably /var -> /private/var on macOS). Keep lexical identities when
+    // possible, then compare both physical paths before falling back.
+    let relative = path
+        .strip_prefix(root)
+        .map(Path::to_path_buf)
+        .ok()
+        .or_else(|| {
+            if !path.is_absolute() {
+                return None;
+            }
+            let canonical_root = std::fs::canonicalize(root).ok()?;
+            let canonical_path = std::fs::canonicalize(path).ok()?;
+            canonical_path
+                .strip_prefix(canonical_root)
+                .ok()
+                .map(Path::to_path_buf)
+        })
+        .unwrap_or_else(|| path.to_path_buf());
     let value = relative
         .components()
         .filter_map(|component| match component {

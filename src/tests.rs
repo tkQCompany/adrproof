@@ -526,6 +526,78 @@ fn evidence_records_every_relevant_manifest_fingerprint() {
     assert!(evidence.inputs.iter().all(|item| item.sha256.len() == 64));
 }
 
+#[test]
+fn evidence_storage_uses_portable_filenames_without_changing_logical_ids() {
+    let root = workspace(false);
+    let out = root.join(".adrproof");
+    run_check(&root, &FixedBackend(Verdict::Sat), &out).unwrap();
+    let directory = out.join("evidence");
+    let stored = evidence::latest(&directory).unwrap().unwrap();
+    assert!(stored.id.0.starts_with("EVIDENCE:"));
+    let files = fs::read_dir(&directory)
+        .unwrap()
+        .collect::<Result<Vec<_>, _>>()
+        .unwrap();
+    assert_eq!(files.len(), 1);
+    let name = files[0].file_name().into_string().unwrap();
+    assert!(name.ends_with(".json"));
+    assert!(
+        !name
+            .chars()
+            .any(|c| c.is_control() || "<>:\"/\\|?*".contains(c)),
+        "non-portable filename: {name}"
+    );
+    #[cfg(unix)]
+    {
+        // Old Unix evidence files remain readable without a migration or rewrite.
+        fs::rename(
+            files[0].path(),
+            directory.join(format!("{}.json", stored.id.0)),
+        )
+        .unwrap();
+        assert_eq!(evidence::latest(&directory).unwrap().unwrap(), stored);
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn canonical_cargo_paths_under_an_aliased_root_remain_relevant_inputs() {
+    let physical = workspace(false);
+    let alias_parent = dir();
+    let alias = alias_parent.join("project");
+    std::os::unix::fs::symlink(&physical, &alias).unwrap();
+    let state = dir();
+    let roots = roots::VerificationRoots::explicit(&alias, &alias, &state);
+    let manifest = fs::canonicalize(physical.join("domain/Cargo.toml")).unwrap();
+    assert_eq!(
+        roots.project_identity(&manifest),
+        "project:domain/Cargo.toml"
+    );
+    assert_eq!(roots.spec_identity(&manifest), "spec:domain/Cargo.toml");
+    run_check_with_roots(&roots, &FixedBackend(Verdict::Sat)).unwrap();
+    let stored = evidence::latest(&state.join("evidence")).unwrap().unwrap();
+    assert!(
+        stored
+            .inputs
+            .iter()
+            .any(|i| i.source == "project:domain/Cargo.toml")
+    );
+    let mut changed = fs::read_to_string(&manifest).unwrap();
+    changed.push_str("\n# relevant aliased input changed\n");
+    fs::write(&manifest, changed).unwrap();
+    assert_eq!(
+        current_evidence_status_with_roots(&roots, &state.join("evidence"), "Z3 4.13.4", 10_000)
+            .unwrap(),
+        evidence::VerificationStatus::Stale
+    );
+    run_check_with_roots(&roots, &FixedBackend(Verdict::Sat)).unwrap();
+    assert_eq!(
+        current_evidence_status_with_roots(&roots, &state.join("evidence"), "Z3 4.13.4", 10_000)
+            .unwrap(),
+        evidence::VerificationStatus::Pass
+    );
+}
+
 struct BrokenBackend;
 impl ConstraintBackend for BrokenBackend {
     fn check(&self, _: &RelationalProofObligation, _: &Path) -> Result<BackendResult, Error> {

@@ -134,9 +134,10 @@ pub fn store(directory: &Path, mut evidence: Evidence) -> Result<Evidence, std::
     fs::create_dir_all(directory)?;
     let seed = serde_json::to_vec(&evidence).map_err(std::io::Error::other)?;
     evidence.id = EvidenceId(format!("EVIDENCE:{}", &hash(&seed)[..24]));
-    let target = directory.join(format!("{}.json", evidence.id.0));
+    let stem = storage_stem(&evidence.id);
+    let target = directory.join(format!("{stem}.json"));
     if !target.exists() {
-        let temporary = directory.join(format!(".{}.tmp", evidence.id.0));
+        let temporary = directory.join(format!(".{stem}.tmp"));
         fs::write(
             &temporary,
             serde_json::to_vec_pretty(&evidence).map_err(std::io::Error::other)?,
@@ -144,6 +145,13 @@ pub fn store(directory: &Path, mut evidence: Evidence) -> Result<Evidence, std::
         fs::rename(temporary, target)?;
     }
     Ok(evidence)
+}
+
+// Store-generated IDs consist of a fixed uppercase/hyphen prefix, a colon,
+// and a hex digest. The colon is logical, not a portable filename character.
+// Loaders read IDs from JSON, so historical colon-named files remain readable.
+pub(crate) fn storage_stem(id: &EvidenceId) -> String {
+    id.0.replace(':', "-")
 }
 pub fn load_all(directory: &Path) -> Result<Vec<Evidence>, std::io::Error> {
     if !directory.is_dir() {

@@ -468,9 +468,10 @@ pub fn store(
     })?;
     let seed = serde_json::to_vec(&evidence).expect("correspondence evidence serialization");
     evidence.id = EvidenceId(format!("CORRESPONDENCE-EVIDENCE:{}", &hash(&seed)[..24]));
-    let target = directory.join(format!("{}.json", evidence.id.0));
+    let stem = crate::evidence::storage_stem(&evidence.id);
+    let target = directory.join(format!("{stem}.json"));
     if !target.exists() {
-        let temporary = directory.join(format!(".{}.tmp", evidence.id.0));
+        let temporary = directory.join(format!(".{stem}.tmp"));
         fs::write(
             &temporary,
             serde_json::to_vec_pretty(&evidence).expect("correspondence evidence serialization"),

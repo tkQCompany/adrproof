@@ -24,8 +24,11 @@ library fixtures are explicitly Unix-only; parser, dependency, migration, and
 evidence-freshness regressions now compile on Windows too. The pinned minimum
 Rust version is used for these jobs, not a floating stable toolchain.
 
-This is configured coverage, not yet evidence of a successful remote run. Keep
-the support levels above until the expanded jobs pass for the published commit.
+The first expanded run (CI #20) passed on Linux but failed on macOS and Windows:
+canonical Cargo paths lost relevant fingerprints, and colon-bearing evidence
+filenames failed on Windows. Both now have corrections and local regressions;
+a remote rerun is still required. Keep the support levels above until the
+expanded jobs pass for the published correction commit.
 Windows still does not exercise the POSIX execution backends.
 
 ## Toolchain and external programs
