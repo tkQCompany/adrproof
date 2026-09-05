@@ -1,6 +1,9 @@
 # Qualification record — 2026-09-05
 
-**Status: fixture qualification passed; A/B/C repair experiment NOT RUN.**
+**Historical preparation status: fixture qualification passed; A/B/C repair
+experiment had NOT RUN at this stage.** The subsequently approved nine-session
+execution is documented separately in [RESULTS-9.md](RESULTS-9.md). Pending items
+below describe this preparation checkpoint, not the latest project status.
 
 Baseline ADRProof: `e6914b742bf1f5ddb08eecb368e2413807fd14c0`.
 The verifier core and roadmap were not changed. Rust 1.98.0 and real Z3 4.13.4

@@ -4,6 +4,12 @@ This is a local, neutral experiment, not a product feature, CI integration,
 or a claim that a verifier improves a model's intelligence. It does not change
 the ADRProof roadmap. Do not publish model transcripts without review.
 
+Current record: the separately approved [nine-session pilot](PILOT-9.md) is
+complete; see [actual results and limitations](RESULTS-9.md). All arms scored
+3/3 on the first attempt: a ceiling effect, not evidence of feedback benefit.
+The original broader proposal and historical preparation stages below remain
+for context; they do not authorize additional model runs.
+
 ## Preregistered design
 
 - Verifier baseline: `e6914b742bf1f5ddb08eecb368e2413807fd14c0`.
