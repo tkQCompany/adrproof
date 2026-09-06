@@ -38,9 +38,17 @@ and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34038211728).
 The required-set gate suite passed on both portable runners for
 `1042a56a6c6458cbfc666df18f2e8514d7d75033`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34039678722)
 and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34039678829).
-Snapshot controls now extend that suite using actual Cargo metadata and a native
-fixture provider. Their own post-push result is required; earlier CI does not
-qualify those additions or a real isolated producer environment.
+Snapshot controls, including Cargo metadata and a native fixture provider, passed
+for `0920a02711bf90a642a4744d9b95482a47e9950d`:
+[CI](https://github.com/tkQCompany/adrproof/actions/runs/34041552279) and
+[CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34041552277).
+
+The new [Linux producer recipe](ISOLATED_PRODUCER.md) was locally exercised with
+Bubblewrap 0.12.0 and installed Rust 1.98.0/Python 3.14 runtime files. Its namespace
+and transport qualification is a neutral host-specific result, not a macOS/Windows
+claim or qualification of GitHub's runner isolation. New public CI runs supervisor
+unit controls only; its own post-push result is pending. Live tests require explicit
+opt-in and fail when required namespaces are unavailable.
 
 ## Toolchain and external programs
 

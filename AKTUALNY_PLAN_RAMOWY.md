@@ -412,3 +412,59 @@ this file. Push/release remain maintainer actions.
   Test tampered producer/context/transport independently. Do not enable any
   consumer workflow until its owner/controller accepts that concrete boundary.
   P36/P37 remain open for that qualification and other evidence adapters.
+
+### Implementation checkpoint 2026-09-06 — neutral isolated Linux producer
+
+- Continued from pushed `0920a02`, with successful CI and CodeQL recorded in
+  [supported platforms](docs/SUPPORTED_PLATFORMS.md). The Rust verifier, CLI and
+  published snapshot/provider/evidence contracts are unchanged by this slice.
+- Wrote the [producer contract and review packet](docs/ISOLATED_PRODUCER.md), then
+  implemented a small Python/Bubblewrap integration harness outside the core.
+  Profile generation is not approval: independent profile/source/spec pins are
+  required before execution. The complete runtime, supervisor/probe, entry-point
+  binaries, kernel release and fixed policy participate in the producer context.
+- Actual enforcement: required mount/user/PID/IPC/network/UTS namespaces, read-only
+  runtime/project/spec mounts, fixed virtual paths and UID/GID, no host home/root
+  mount, no ambient environment inheritance, no capabilities, nested-userns denial,
+  fresh scratch and bounded process execution. There is no relaxed fallback when
+  the host denies namespace creation. The initial in-session probe was denied;
+  explicit outside-session qualification then exercised the real host boundary.
+- Transport: successful capture is emitted through supervisor-owned files in a
+  new output directory. A separately transported receipt pin binds the snapshot,
+  profile, project/spec file-tree digests and unique run ID. Tampered/replaced
+  artifacts, wrong context and cross-run replay fail; neither capture nor verified
+  transport is called architectural PASS. Trusted Git/export identity mapping and
+  the actual job-output channel remain consuming integration duties.
+- Qualification: all 13 Python harness tests passed locally, including four live
+  cases on Linux 7.2.2 with Bubblewrap 0.12.0, Rust 1.98.0 and Python 3.14.7.
+  Fourteen probe assertions confirmed read-only source/runtime mounts, hidden
+  host marker/home/environment, separate network namespace and inaccessible host
+  service, no capabilities/new privileges, nested-userns denial, fresh writable
+  scratch and wall timeout. Actual Cargo metadata and the neutral Python provider
+  produced snapshots; transfer succeeded and the gate still rejected missing
+  inventory. A changed runtime was rejected before producer execution.
+- The disposable test runtime's final profile digest was
+  `7f0fcb60cbcab7c72ccfc12a82224c617f0a3ebe3a0f59b370a2a7e715c8798f`.
+  This records a measurement, not an approved/deployed profile or distributed
+  runtime. Rebuilds require identical tools/files/modes to reproduce it; the
+  fixture builder is not a portable reproducible runtime distribution. Temporary
+  test runtimes were removed by fixture cleanup; no user project state was cleaned.
+- Regression: all 179 Rust tests, formatting, Clippy, documentation links and
+  workflow policy checks passed. Public Linux CI now runs nine supervisor unit
+  controls only; four live namespace tests are explicitly skipped there. A unit
+  pass is not namespace qualification. Opt-in live tests fail rather than skip
+  when required host facilities are missing. Own post-push CI is pending.
+- Limits: trusted host/Python dependencies and kernel, immutable host-side staging,
+  provider determinism/transitive-code review, and cgroup/VM limits for the whole
+  job remain required. Per-process limits are not aggregate resource containment.
+  Clock/entropy/CPU and within-run state remain observable. There is no defense
+  against malicious already-approved code or kernel exploits, no deployment
+  approval and no claim of Windows/macOS runner support.
+- No private integration, consumer workflow, actual requirement approval,
+  package/release/tag publication or crates.io action occurred.
+- Next bounded step after CI: owner/controller review of the concrete integration
+  profile and protected pin channel before any consumer pilot. If public work is
+  requested first, exercise a neutral complete reviewed-baseline → fresh-proof →
+  isolated-capture → transfer → admission chain with a real pinned solver and
+  negative fixtures, keeping synthetic approvals clearly separate from real ones.
+  Do not turn the successful capture/transport tests into implicit consumer GO.

@@ -2,6 +2,9 @@
 
 This implements the next bounded P36/P37 adapter slice. It does not install a
 consumer workflow or provide an operating-system sandbox.
+The separate [neutral Linux producer harness](ISOLATED_PRODUCER.md) now provides
+a Bubblewrap recipe and measured local qualification. Snapshot capture itself
+still has no sandbox, and a real consumer must approve its concrete host/profile.
 
 ## Two different authorities
 

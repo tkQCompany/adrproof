@@ -22,6 +22,10 @@ Snapshot transport pins must also come from the protected producer, not candidat
 artifacts. A declared producer-context digest is not proof of isolation: qualify
 the actual runner, immutable provider implementation/runtime, ambient-input policy
 and protected artifact transfer before admitting a real project's code.
+The [neutral Linux producer review packet](ISOLATED_PRODUCER.md) provides a tested
+starting recipe, not approval of those duties for a consumer. It binds file-tree
+digests and a unique run ID; trusted job metadata must additionally bind Git
+commits/trees and the artifact being admitted or promoted.
 
 `provider check --json` tests configured provider conformance. It does not check
 architectural obligations. `check --json` combines the effective specification

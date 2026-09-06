@@ -10,6 +10,13 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Added
 
+- Experimental neutral Linux producer harness outside the Rust core: mandatory
+  Bubblewrap namespaces, read-only runtime/source exports, fresh scratch, cleared
+  environment, bounded execution and profile/source pins. Run-bound receipts
+  protect snapshot transfer independently of architectural PASS. Includes a review
+  packet, supervisor unit controls and opt-in live Cargo/Python-provider isolation
+  tests. It neither installs consumer CI nor approves a production runtime.
+
 - Experimental `snapshot capture` and opt-in `gate prepare-snapshot` /
   `evaluate-snapshot`: separately versioned snapshots and v1alpha2 required-set /
   gate reports. A trusted external producer executes Cargo/external providers;

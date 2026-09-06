@@ -28,6 +28,9 @@ Its first slice supports ADRLogic/static SQL and selected imported native tests;
 Cargo/external-provider projects can use the opt-in [fact snapshot path](docs/FACT_SNAPSHOTS.md):
 a trusted isolated producer executes extraction and the gate validates its pinned
 snapshot without executing tools. Legacy gate commands remain in-process only.
+An experimental [Linux producer recipe](docs/ISOLATED_PRODUCER.md) now exercises
+this boundary with Bubblewrap and run-bound artifact receipts; it does not install
+a consumer workflow or qualify every host/provider combination.
 Trusted baseline and snapshot pins,
 reviewer authentication and evidence-store protection remain integration duties.
 Implementation work follows the

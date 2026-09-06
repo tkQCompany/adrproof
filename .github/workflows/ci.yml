@@ -28,6 +28,8 @@ jobs:
         run: python3 scripts/check-markdown-links.py
       - name: Check workflow permissions and action pins
         run: python3 scripts/check-workflow-policy.py
+      - name: Test producer harness unit controls (not namespace qualification)
+        run: ADRPROOF_RUN_BWRAP_TESTS=0 python3 -I -m unittest discover -s scripts/tests -v
       - name: Test reproducible source release tooling
         run: scripts/test-source-release.sh
 

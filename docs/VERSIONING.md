@@ -75,6 +75,14 @@ use `adrproof-fact-snapshot-v1alpha1`. No legacy set is silently upgraded; the
 provider wire/report v1 and proof-evidence formats remain unchanged. Snapshot
 pins attest a trusted producer artifact, not a new deductive-proof authority.
 
+The separate Linux integration harness uses
+`adrproof-linux-producer-profile-v1alpha1` and
+`adrproof-producer-receipt-v1alpha1`. [Its contract](ISOLATED_PRODUCER.md) binds
+execution policy and run-scoped artifact transport; successful transport is not
+proof PASS. It does not extend the Rust CLI, provider wire protocol or evidence
+authority. Changing the harness/runtime changes the profile digest and requires
+separate approval of the new producer context.
+
 - patch package releases preserve supported protocol and schema behavior;
 - adding support for a new protocol does not remove older supported protocols;
 - removing a protocol requires a documented deprecation cycle;

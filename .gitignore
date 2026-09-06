@@ -2,6 +2,10 @@
 /target/
 /dist/
 
+# Python harness bytecode
+__pycache__/
+*.py[cod]
+
 # ADRProof generated state and local evidence
 **/.adrproof/
 /.phase*-*/
