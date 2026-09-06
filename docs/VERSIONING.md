@@ -4,9 +4,17 @@ ADRProof has three separately versioned surfaces.
 
 ## Package version
 
-The Cargo package follows Semantic Versioning. Before `1.0.0`, a minor package
+The Cargo package follows [Semantic Versioning 2.0.0](https://semver.org/).
+Before `1.0.0`, a minor package
 release may contain public API changes, but published protocol identifiers keep
 their compatibility rules below.
+
+The product remains unstable before 1.0, including any developmental 0.x version
+without a prerelease suffix. The first stable product target requires sustained
+usefulness across multiple maintainer projects and mature specification languages,
+not elapsed time alone. See
+[ADRP-0009](adr/0009-long-term-maturity-and-project-independence.md). No current
+protocol/schema commitment is revoked by this maturity policy.
 
 ## External-provider protocol
 
@@ -52,7 +60,9 @@ silently reinterpret an existing schema version.
 
 ## Maintenance of the 0.2 line
 
-After stable 0.2.0, compatible defect fixes use 0.2.x patch releases. A correction
+For a maintained normal 0.2 release, compatible defect fixes use 0.2.x patch
+releases; beta fixes use explicit prerelease versions. Neither implies 1.0
+product maturity. A correction
 that restores the documented v1 behavior requires a regression test and a
 changelog entry. If a correction changes previously emitted facts or verdicts,
 consumers must rerun verification on the new package commit; old evidence is

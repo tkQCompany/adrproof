@@ -1,5 +1,14 @@
 # Stable 0.2 release runbook
 
+> **HISTORICAL — INACTIVE.** Superseded by
+> [ADRP-0009](adr/0009-long-term-maturity-and-project-independence.md).
+> The first stable product target is 1.0 after sustained use in multiple projects.
+> Do not execute the former 0.2 promotion instructions below. They are retained
+> only as historical release-engineering context, not current authority.
+> Follow the [framework plan](../AKTUALNY_PLAN_RAMOWY.md) and
+> [release checklist](RELEASE_CHECKLIST.md); a release-specific 1.0 procedure
+> must be reviewed before any version bump, tag or publication.
+
 This runbook turns the stable-release gate into an ordered, auditable procedure.
 It does not authorize a release: the maintainer owns the GO decision, push, tag,
 GitHub Release, and attached artifacts. ADRProof is never published to crates.io.

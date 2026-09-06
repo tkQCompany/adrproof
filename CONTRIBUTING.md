@@ -5,6 +5,11 @@ explicit authority boundaries, and reviewable evidence as product requirements.
 
 ## Before opening a pull request
 
+For ongoing implementation, first read the
+[current framework plan](AKTUALNY_PLAN_RAMOWY.md) and the relevant accepted ADRs.
+Identify the plan's checklist IDs in scope and leave an evidence-backed checkpoint
+when the slice is complete. A planned capability is not an implemented guarantee.
+
 1. Discuss substantial behavioral or architectural changes in an issue first.
 2. Keep normative Architecture Decision Records in English and follow the
    policy in [`docs/DOCUMENTATION_LANGUAGE.md`](docs/DOCUMENTATION_LANGUAGE.md).

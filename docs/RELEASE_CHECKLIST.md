@@ -1,8 +1,10 @@
 # Release checklist
 
-The ordered stable-release procedure is
-[`STABLE_0_2_RUNBOOK.md`](STABLE_0_2_RUNBOOK.md). This checklist is its compact
-review surface.
+This checklist covers technical release controls and the target 1.0 maturity
+assessment under [ADRP-0009](adr/0009-long-term-maturity-and-project-independence.md).
+The [former 0.2 runbook](STABLE_0_2_RUNBOOK.md) is inactive historical context.
+A release-specific 1.0 procedure must be reviewed when the maintainer accepts
+maturity; this checklist does not itself authorize a release.
 
 ## Every prerelease and release
 
@@ -36,10 +38,11 @@ review surface.
   private-provider/project-specific.
 - [ ] Documentation has been followed from a clean checkout.
 
-## Stable 0.2 gate
+## Stable product 1.0 gate
 
 - [ ] The maintainer has accepted evidence of usefulness from sustained use
-  across real project changes, including approved integration/CI feedback.
+  across real changes in multiple maintainer projects, including approved
+  integration/CI feedback.
 - [ ] Specification-language syntax and semantics are mature enough for a
   compatibility commitment; limitations and migration expectations are recorded.
 - [ ] The maturity review covers useful/misleading findings, missed violations
@@ -47,7 +50,9 @@ review surface.
 - [ ] A repeated isolated pilot on controller-approved commit pins has passed;
   it supplements, rather than replaces, sustained-use evidence.
 - [ ] No release-blocking protocol defect remains.
-- [ ] Only compatible fixes were made after beta.
+- [ ] Public API, specification-language and migration policies are documented;
+  changes since prerelease preserve existing versioned contracts or introduce
+  separately versioned replacements without silently reinterpreting them.
 - [ ] The source archive is generated twice from the release tag with
   `scripts/build-source-release.sh`; both archives and checksum files are
   byte-for-byte identical, as are their release manifests.
@@ -55,4 +60,4 @@ review surface.
   to the matching stable GitHub Release; no project-produced binary is attached.
 - [ ] Supported platforms and known limitations agree with
   `docs/SUPPORTED_PLATFORMS.md` and current CI.
-- [ ] The `0.2.0` GitHub milestone is complete.
+- [ ] The maintainer-approved release milestone and 1.0 release procedure are complete.

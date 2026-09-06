@@ -12,6 +12,9 @@ The canonical Architecture Decision Records live in [`adr/`](adr/):
 - [`0004-project-intent-ir.md`](adr/0004-project-intent-ir.md)
 - [`0005-fact-coverage-and-immutable-evidence.md`](adr/0005-fact-coverage-and-immutable-evidence.md)
 - [`0006-versioned-external-provider-process.md`](adr/0006-versioned-external-provider-process.md)
+- [`0007-reviewed-requirements-and-formalizations.md`](adr/0007-reviewed-requirements-and-formalizations.md)
+- [`0008-architect-workflow-and-bounded-feedback.md`](adr/0008-architect-workflow-and-bounded-feedback.md)
+- [`0009-long-term-maturity-and-project-independence.md`](adr/0009-long-term-maturity-and-project-independence.md)
 
 English is the canonical language for normative documentation. See
 [`DOCUMENTATION_LANGUAGE.md`](DOCUMENTATION_LANGUAGE.md).
@@ -39,9 +42,12 @@ English is the canonical language for normative documentation. See
 
 ## Project context
 
+- [Current framework plan](../AKTUALNY_PLAN_RAMOWY.md) — implementation compass,
+  45 architect-facing criteria, baseline gaps and session handoff requirements.
 - [`MILESTONE_2_BASELINE.md`](MILESTONE_2_BASELINE.md)
 - [`RELEASE_CHECKLIST.md`](RELEASE_CHECKLIST.md)
-- [`STABLE_0_2_RUNBOOK.md`](STABLE_0_2_RUNBOOK.md)
+- [`STABLE_0_2_RUNBOOK.md`](STABLE_0_2_RUNBOOK.md) — inactive historical procedure,
+  superseded by ADRP-0009; not a current release instruction.
 - [`SOURCE_RELEASES.md`](SOURCE_RELEASES.md)
 - [`SUPPORTED_PLATFORMS.md`](SUPPORTED_PLATFORMS.md)
 - [`CI_ADOPTION.md`](CI_ADOPTION.md)

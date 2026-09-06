@@ -5,6 +5,23 @@ specifications. Its first milestone checks the global consistency of formal clau
 embedded in Markdown ADRs. It does not use an LLM in its verification core and it
 does not attempt to model the semantics of Rust.
 
+## Development status and direction
+
+**Unstable, pre-1.0.** Package versions follow
+[Semantic Versioning 2.0.0](https://semver.org/). Version 1.0 requires demonstrated
+long-term usefulness across multiple maintainer projects and mature
+specification-language syntax and semantics. No release date is committed.
+Published protocol/report/schema compatibility commitments remain in force;
+see [versioning](docs/VERSIONING.md).
+
+The accepted direction is to help architects and coding tools maintain reviewed
+requirements, explicit constraints and current evidence through one workflow,
+while retaining specialized verifiers. LLM feedback may help find compliant
+solutions, but neither faster generation nor violation-free proposals are
+guaranteed. New formalization-review and complete-inventory capabilities are
+targets, not existing features. Implementation work follows the
+[current framework plan](AKTUALNY_PLAN_RAMOWY.md) and its normative ADRs.
+
 ## Quick start
 
 The following commands run from a clean checkout and are continuously exercised

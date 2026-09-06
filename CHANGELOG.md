@@ -21,11 +21,17 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Planned
 
-- Reproducible stable `0.2.0` release artifacts only after an accepted maturity
-  assessment and the technical release gates; no calendar deadline is set.
+- Stable product `1.0.0` only after demonstrated long-term usefulness across
+  multiple maintainer projects and mature specification languages, with reviewed
+  technical release gates and reproducible source artifacts; no deadline is set.
 
 ### Changed
 
+- Accepted ADRP-0007/0008/0009 and a durable framework plan for reviewed
+  requirement/formalization links, an architect-facing assurance workflow and
+  bounded external coding feedback. These are target capabilities, not newly
+  implemented guarantees. The former stable 0.2 promotion procedure is inactive;
+  README now explicitly exposes pre-1.0 status and Semantic Versioning.
 - Stable-release readiness now requires evidence from sustained real use and
   mature specification-language syntax and semantics instead of a timed beta
   waiting period. Published protocol/report v1 compatibility remains unchanged.

@@ -1,4 +1,4 @@
-# Stable 0.2 gate review — template
+# Stable product 1.0 maturity review — template
 
 Status: **NOT EVALUATED**. Copy and fill this record; placeholders are not PASS.
 This template does not authorize publication.
@@ -7,12 +7,13 @@ This template does not authorize publication.
 
 - Reviewer and review timestamp (UTC): TBD
 - Public beta publication timestamp and release URL: TBD
-- Sustained-use scope, project changes exercised, and evidence references: TBD
+- Sustained-use scope across multiple maintainer projects, changes exercised,
+  and owner-approved sanitized evidence references: TBD
 - User and approved integration-controller assessment of practical usefulness: TBD
 - Specification-language syntax/semantics maturity and migration expectations: TBD
 - Beta tag, full commit and tree: TBD
 - Proposed stable source commit and tree: TBD
-- Compatible change review since beta: TBD
+- Versioned-contract compatibility and documented migration review since beta: TBD
 
 There is no calendar deadline or minimum waiting period. Record what actual use
 has established; elapsed time, a single pilot, green CI, or absence of community
@@ -49,5 +50,7 @@ record; cite only an owner-approved sanitized pilot summary.
 - Reproduced archive/manifest/checksum comparison and digests: TBD
 - Public release URL and artifact inspection: TBD
 
-Follow [`../STABLE_0_2_RUNBOOK.md`](../STABLE_0_2_RUNBOOK.md); do not mark
-post-publication checks complete before the maintainer publishes.
+Follow [ADRP-0009](../adr/0009-long-term-maturity-and-project-independence.md)
+and the [release checklist](../RELEASE_CHECKLIST.md). The old 0.2 promotion
+procedure is inactive; require a reviewed 1.0-specific procedure before release.
+Do not mark post-publication checks complete before the maintainer publishes.

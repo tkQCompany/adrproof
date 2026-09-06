@@ -4,6 +4,20 @@ ADRProof evolves as a deterministic meta-verifier. It standardizes the boundary
 between project intent, facts, specialized verification tools, and immutable
 evidence; it does not attempt to replace those tools with one universal logic.
 
+## Current product direction
+
+The [current framework plan](AKTUALNY_PLAN_RAMOWY.md) is the implementation
+compass for the accepted architect-facing recommendations. ADRP-0007/0008/0009
+define reviewed requirement/formalization links, a coherent workflow with bounded
+external feedback, and long-term product maturity. Their target capabilities are
+not implemented merely by accepting the decisions. Read the plan's baseline and
+checkpoints before choosing the next slice.
+
+The first stable product target is **1.0**, after sustained usefulness in multiple
+maintainer projects and mature specification languages. Developmental 0.x
+releases are not a declaration of whole-product stability. No release date,
+community participation or fixed waiting period is required.
+
 ## 0.1 — public baseline
 
 Status: released as source at commit
@@ -50,7 +64,8 @@ into ADRProof.
   may still change in response to conformance and pilot findings;
 - **beta**: protocol v1, its schemas, exit behavior, and machine-readable
   diagnostics are frozen; only compatible fixes are accepted;
-- **stable**: sustained use across real project changes demonstrates practical
+- **stable product (1.0)**: sustained use across real changes in multiple
+  maintainer projects demonstrates practical
   value, and the syntax and semantics of the supported specification languages
   are mature enough for a compatibility commitment. The portable conformance
   suite must also pass on all supported platforms, a repeated private pilot must
@@ -83,7 +98,9 @@ An external provider cannot produce a current PASS unless it:
 
 ## Near-term delivery and CI adoption
 
-The remaining 0.2 work is tracked below. A checked preparation item does not
+Compatible 0.2 maintenance and integration preparation are tracked below. New
+product capability follows the framework plan with separately versioned contracts
+where required. A checked preparation item does not
 imply that a consuming project has enabled CI or that stable has been released.
 
 - [x] Configure broader macOS library/CLI coverage and Windows core regressions;
@@ -97,16 +114,16 @@ imply that a consuming project has enabled CI or that stable has been released.
   fail-closed behavior, private evidence, promotion and rollback.
 - [ ] Review branch protection using authenticated maintainer access. The
   unauthenticated API returned 401 on 2026-09-04, not a verified protection state.
-- [ ] Create and populate the `0.2.0` milestone; the public milestone list was
-  empty on 2026-09-04. Resolve release metadata during the maintainer handoff.
+- [ ] Resolve release metadata and the appropriate milestone during a separately
+  approved release handoff; there is no automatic stable 0.2 promotion.
 - [ ] Obtain consuming-controller approval of an exact repeat-pilot pin set,
   required clauses, coverage and negative controls; preserve historical locks.
 - [ ] Execute the isolated repeat pilot and review a sanitized result.
 - [ ] Accumulate and review sustained-use evidence, including consuming-project
   CI feedback and specification-language limitations, before deciding maturity.
-- [ ] Only after the maintainer accepts that maturity assessment and the
-  technical gates, prepare the stable release candidate and hand
-  push/tag/publication to the maintainer following the release runbook.
+- [ ] Only after the maintainer accepts the multi-project maturity assessment,
+  define and review the 1.0 release-specific procedure and technical gates;
+  push/tag/publication remain maintainer actions.
 - [ ] Obtain separate approval for a private shadow CI job; keep actual failed
   verification results visible without making the check required yet.
 - [ ] Evaluate repeatability, rule-negative controls, artifact handling and
@@ -115,7 +132,8 @@ imply that a consuming project has enabled CI or that stable has been released.
   promoted artifact; architectural consistency is not release authorization.
 
 See [`docs/CI_ADOPTION.md`](docs/CI_ADOPTION.md) for the adoption contract and
-[`docs/STABLE_0_2_RUNBOOK.md`](docs/STABLE_0_2_RUNBOOK.md) for the stable gate.
+the [release checklist](docs/RELEASE_CHECKLIST.md) for technical controls.
+The [old 0.2 runbook](docs/STABLE_0_2_RUNBOOK.md) is historical and inactive.
 Development, approved manual pilots and separately approved CI adoption may
 proceed during prerelease use; none requires waiting for a stable label or
 changing the frozen protocol/report contracts.

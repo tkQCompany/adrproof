@@ -11,7 +11,9 @@ behavior in TLA+ or Quint; APIs in OpenAPI/JSON Schema; databases in SQL DDL;
 embedded timing and allocation analyses may use AADL; hardware and properties may
 use VHDL/SystemVerilog and SVA/PSL. Verifier-native artifacts remain inspectable
 and editable by experts. LLM-generated formalizations remain untrusted until a
-deterministic tool checks them.
+deterministic tool checks their formal properties. Such a check does not validate
+their translation of human intent; that correspondence requires separate review
+under [ADRP-0007](adr/0007-reviewed-requirements-and-formalizations.md).
 
 SysML v2 is an important precedent because its semantic model can support textual,
 graphical, and API views. Future C4, Mermaid, PlantUML, or SysML projections should
