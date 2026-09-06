@@ -19,6 +19,22 @@ cargo run --locked -- facts examples/rust-workspace-architecture --json \
   > "$test_root/facts.json"
 jq -e 'type == "array" and length > 0' "$test_root/facts.json" >/dev/null
 
+if cargo run --locked -- inventory --spec-root examples/requirement-inventory --json \
+  > "$test_root/inventory.json"; then
+  echo "error: neutral inventory must expose its unmapped requirement" >&2
+  exit 1
+else
+  inventory_exit=$?
+fi
+test "$inventory_exit" -eq 3
+jq -e \
+  '.schema_version == "adrproof-inventory-report-v1alpha1"
+    and .result == "INCOMPLETE"
+    and .review_status == "NOT_ASSESSED"
+    and .verification_status == "NOT_RUN"
+    and .gaps[0].requirement == "REQ-recovery"' \
+  "$test_root/inventory.json" >/dev/null
+
 mkdir -p "$test_root/state"
 cargo run --locked -- provider check component-manifest --json \
   --project-root examples/external-provider/project \

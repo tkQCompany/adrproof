@@ -9,27 +9,29 @@ portable external-provider protocol surface.
 | Environment | Continuously verified scope | Support level |
 | --- | --- | --- |
 | `ubuntu-latest` GitHub runner | Formatting, Clippy, full Rust test suite, external-provider process tests, dependency audit, and reproducible source archive | Primary |
-| `macos-latest` GitHub runner | External-provider v1 response conformance and a real `provider check --json` process invocation | Protocol surface |
-| `windows-latest` GitHub runner | External-provider v1 response conformance and a real `provider check --json` process invocation | Protocol surface |
+| `macos-latest` GitHub runner | Library regressions, CLI help, reference-provider CLI tests, response conformance and a native provider process invocation | Tested library and provider surfaces |
+| `windows-latest` GitHub runner | Platform-neutral library regressions, CLI help, response conformance and a native provider process invocation | Tested core and provider surfaces; no POSIX backends |
 
 The runner labels identify the environments exercised by CI; they do not
 promise a particular CPU architecture or operating-system release beyond the
 images currently supplied under those labels.
 
-### Pending coverage expansion
+### Confirmed expansion and next-run additions
 
-The next CI run additionally exercises all library tests and CLI help on macOS
-and Windows, plus the reference-provider CLI suite on macOS. POSIX shell-backed
-library fixtures are explicitly Unix-only; parser, dependency, migration, and
-evidence-freshness regressions now compile on Windows too. The pinned minimum
-Rust version is used for these jobs, not a floating stable toolchain.
+Expanded library and CLI jobs passed for the exact pushed commit
+`b321057ce3bf9bfc80d2ddbfa137026cea58a96f`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34032643386)
+and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34032643378),
+confirmed on 2026-09-06. All platform job steps passed except the intentionally
+macOS-only reference-provider step, skipped on Windows. POSIX shell-backed library
+fixtures remain Unix-only. The pinned minimum Rust version is used, not a
+floating stable toolchain. Passing stub-backed fixtures does not qualify every
+real external verifier installation.
 
-The first expanded run (CI #20) passed on Linux but failed on macOS and Windows:
-canonical Cargo paths lost relevant fingerprints, and colon-bearing evidence
-filenames failed on Windows. Both now have corrections and local regressions;
-a remote rerun is still required. Keep the support levels above until the
-expanded jobs pass for the published correction commit.
-Windows still does not exercise the POSIX execution backends.
+This closes the rerun requirement after CI #20 exposed canonical Cargo path and
+Windows evidence-filename defects. The new experimental requirement-inventory
+suite is also configured for both portable runners, but its first remote result
+must be checked after the implementation commit is pushed; the baseline above
+does not claim to have exercised this new feature.
 
 ## Toolchain and external programs
 
@@ -46,9 +48,9 @@ Windows still does not exercise the POSIX execution backends.
 
 ## Known limitations
 
-- The complete historical feature suite is continuously exercised on Linux.
-  macOS and Windows CI currently guarantee the external-provider v1 protocol
-  surface, not every ADRProof backend and evidence workflow.
+- The full test target set is continuously exercised on Linux. macOS and Windows
+  additionally exercise the scopes above, not every real external backend,
+  runtime dependency or end-to-end consumer workflow.
 - ADRProof does not sandbox external providers. Timeout, output limits,
   process-tree cleanup, schema validation, declared-input validation, and
   fail-closed diagnostics constrain the protocol boundary but do not turn an

@@ -60,6 +60,8 @@ jobs:
         run: cargo test --locked --lib
       - name: Run CLI help regression tests
         run: cargo test --locked --test cli_help
+      - name: Run requirement inventory regressions
+        run: cargo test --locked --test inventory
       - name: Run reference-provider CLI tests (macOS)
         if: runner.os == 'macOS'
         run: cargo test --locked --test provider_cli

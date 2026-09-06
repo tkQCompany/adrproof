@@ -16,6 +16,7 @@ const COMMANDS: &[&str] = &[
     "bundle",
     "model",
     "correspondence",
+    "inventory",
 ];
 
 fn main() {
@@ -106,6 +107,7 @@ fn print_help(command: Option<&str>) {
         Some("status") => {
             "adrproof status [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
         }
+        Some("inventory") => "adrproof inventory [ROOT] [--spec-root PATH] [--json]",
         Some("diagnose") => {
             "adrproof diagnose [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
         }
@@ -172,13 +174,36 @@ fn parse_cli() -> Result<Cli, Error> {
     };
     if !COMMANDS.contains(&cli.command.as_str()) {
         return Err(Error::ProviderFailure(
-            "usage: adrproof <check|facts|explain|impact|status|diagnose|scenario|native-test|provider|bundle|model|correspondence> [list|check|run|import|create|verify|status] [ID|PATH] [--report PATH] [--output PATH] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--signing-key PATH] [--public-key PATH] [--require-signature] [--policy PATH] [--sarif PATH] [--json] [--summary]".into(),
+            "usage: adrproof COMMAND [OPTIONS]; run adrproof --help for commands".into(),
         ));
     }
     values.remove(0);
     let mut positional = Vec::new();
     let mut index = 0;
     while index < values.len() {
+        if cli.command == "inventory"
+            && values[index] == "--spec-root"
+            && (cli.spec_root.is_some()
+                || values
+                    .get(index + 1)
+                    .is_none_or(|value| value.starts_with('-')))
+        {
+            return Err(Error::Diagnostic {
+                path: "<cli>".into(), line: 1, column: 1,
+                message: "inventory requires exactly one path after --spec-root and rejects repeated roots".into(),
+            });
+        }
+        if cli.command == "inventory"
+            && values[index].starts_with('-')
+            && !matches!(values[index].as_str(), "--json" | "--spec-root")
+        {
+            return Err(Error::Diagnostic {
+                path: "<cli>".into(),
+                line: 1,
+                column: 1,
+                message: format!("inventory does not accept {}", values[index]),
+            });
+        }
         match values[index].as_str() {
             "--json" => cli.json = true,
             "--summary" => cli.summary = true,
@@ -209,6 +234,18 @@ fn parse_cli() -> Result<Cli, Error> {
             value => positional.push(value.to_string()),
         }
         index += 1;
+    }
+    if cli.command == "inventory"
+        && (positional.len() > 1 || (!positional.is_empty() && cli.spec_root.is_some()))
+    {
+        return Err(Error::Diagnostic {
+            path: "<cli>".into(),
+            line: 1,
+            column: 1,
+            message:
+                "inventory accepts one specification root: positional or --spec-root, not both"
+                    .into(),
+        });
     }
     if cli.command == "scenario" {
         cli.scenario_action = positional.first().cloned();
@@ -254,6 +291,9 @@ fn real_main() -> Result<i32, Error> {
     let default_state = legacy.join(".adrproof");
     let state = cli.state_root.as_deref().unwrap_or(&default_state);
     let roots = VerificationRoots::explicit(project, spec, state);
+    if cli.command == "inventory" {
+        return inventory_command(&roots.specification_root, cli.json);
+    }
     if cli.state_root.is_some()
         && (roots.state_root == roots.project_root || roots.state_root == roots.specification_root)
     {
@@ -335,6 +375,45 @@ fn real_main() -> Result<i32, Error> {
             report(adrproof::run_check_with_roots(&roots, &backend)?, cli.json)
         }
     }
+}
+
+fn inventory_command(spec: &Path, json: bool) -> Result<i32, Error> {
+    let report = adrproof::inventory::inspect(spec)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&report).unwrap());
+    } else {
+        println!(
+            "{} — review NOT_ASSESSED; verification NOT_RUN",
+            report.result
+        );
+        for decision in &report.decisions {
+            println!(
+                "{} [{}] {}",
+                decision.id,
+                if decision.active {
+                    "active"
+                } else {
+                    decision.inactive_reason.as_deref().unwrap_or("inactive")
+                },
+                decision.source
+            );
+        }
+        for gap in &report.gaps {
+            println!(
+                "  {}: {} {} {}",
+                gap.code,
+                gap.decision,
+                gap.requirement.as_deref().unwrap_or(""),
+                gap.target.as_deref().unwrap_or("")
+            );
+        }
+        println!(
+            "{} declared requirements; {} gaps. This is not architectural PASS.",
+            report.model.requirements.len(),
+            report.gaps.len()
+        );
+    }
+    Ok(report.exit_code())
 }
 
 fn explain_model(roots: &VerificationRoots, id: &str) -> Result<Option<serde_json::Value>, Error> {

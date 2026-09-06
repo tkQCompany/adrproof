@@ -50,6 +50,7 @@ fn label(node: &GraphNode) -> String {
         GraphNode::Fact(id) => format!("fact:{}", id.0),
         GraphNode::ProofObligation(id) => format!("obligation:{}", id.0),
         GraphNode::Evidence(id) => format!("evidence:{}", id.0),
+        GraphNode::Requirement(id) => format!("requirement:{}", id.0),
     }
 }
 fn edge_label(edge: &GraphEdge) -> String {

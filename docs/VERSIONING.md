@@ -51,6 +51,14 @@ silently reinterpret an existing schema version.
 
 ## Compatibility policy
 
+The experimental requirement inventory uses independent
+`adrproof-requirements-v1alpha1` input and
+`adrproof-inventory-report-v1alpha1` report identifiers. Its meaning is defined
+in [the inventory contract](REQUIREMENT_INVENTORY.md). An incompatible iteration
+must use a new identifier, not reinterpret an old report. No formalization-review
+or proof authority is attached to this surface. Provider protocol/report v1 and
+persisted proof evidence schemas are unchanged.
+
 - patch package releases preserve supported protocol and schema behavior;
 - adding support for a new protocol does not remove older supported protocols;
 - removing a protocol requires a documented deprecation cycle;

@@ -29,6 +29,15 @@ PASS evidence means only that one identified obligation passed under its recorde
 formalization, inputs, assumptions, backend and configuration. It does not close
 the semantic/specification gap or prove all human intent.
 
+The experimental `inventory` projection extends the same model with
+`Decision --Contains--> Requirement` and
+`Requirement --DeclaredFormalization--> Constraint` edges. A requirement carries
+an author-declared normative/rationale kind and a prose selection. These edges
+are not approvals, `VerifiedBy` links or evidence. Missing source/target references
+remain in the inventory report as gaps; no nonexistent decision or constraint node
+is fabricated. Existing verification and impact commands do not yet load this
+projection. See [the inventory contract](REQUIREMENT_INVENTORY.md).
+
 Impact queries merge relational, scenario, model, correspondence and native-test
 subgraphs before following typed edges. This lets a changed implementation file
 reach its directly fingerprinted obligations, their evidence, model-validation

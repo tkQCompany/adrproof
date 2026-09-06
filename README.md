@@ -18,8 +18,10 @@ The accepted direction is to help architects and coding tools maintain reviewed
 requirements, explicit constraints and current evidence through one workflow,
 while retaining specialized verifiers. LLM feedback may help find compliant
 solutions, but neither faster generation nor violation-free proposals are
-guaranteed. New formalization-review and complete-inventory capabilities are
-targets, not existing features. Implementation work follows the
+guaranteed. An experimental [requirement inventory](docs/REQUIREMENT_INVENTORY.md)
+now detects declared omissions and partial ADRLogic mappings. Human-approved
+formalization reviews and an end-to-end required-evidence gate remain targets,
+not existing features. Implementation work follows the
 [current framework plan](AKTUALNY_PLAN_RAMOWY.md) and its normative ADRs.
 
 ## Quick start
@@ -68,7 +70,7 @@ separates normative design records from explanatory material.
 
 When the checked directory contains `Cargo.toml`, `check` invokes `cargo metadata
 --format-version 1 --no-deps --offline` and adds its covered facts to the Project Intent
-Model. Exit codes are: 0 current PASS/SAT, 1 FAIL/UNSAT, 2 invalid input or I/O,
+Model. For `check`, exit codes are: 0 current PASS/SAT, 1 FAIL/UNSAT, 2 invalid input or I/O,
 3 UNKNOWN, 4 timeout, 5 solver failure, and 6 fact-provider failure. Historic
 PASS evidence is immutable; changed inputs, backend version, or semantic
 configuration make its computed validity STALE and never a current PASS.

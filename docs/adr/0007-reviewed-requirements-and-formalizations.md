@@ -53,8 +53,11 @@ contract. Approval records a reviewed interpretation, not mathematical proof of
 human intent. LLM-authored translations cannot approve themselves. New schemas
 must be independently versioned; published protocol/report v1 is unchanged.
 
-This decision specifies target behavior, not implemented functionality. Existing
-evidence freshness is not yet a complete formalization-review mechanism.
+This decision specifies target behavior, not a declaration of full implementation.
+The first [declared-inventory slice](../REQUIREMENT_INVENTORY.md) implements selected
+requirements and mapping-gap inspection. Approved formalization reviews and a
+required-evidence gate remain absent; existing evidence freshness is not yet a
+complete formalization-review mechanism.
 Acceptance of this ADR must not be represented by a self-asserted Boolean proof
 that the implementation complies.
 

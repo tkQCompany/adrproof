@@ -12,6 +12,7 @@ pub mod cargo_facts;
 pub mod correspondence;
 pub mod evidence;
 pub mod external_provider;
+pub mod inventory;
 pub mod native_test;
 pub mod policy;
 pub mod project;
@@ -84,6 +85,7 @@ pub struct Clause {
 #[derive(Debug, Clone)]
 pub struct Adr {
     pub id: String,
+    pub source: PathBuf,
     pub status: Status,
     pub supersedes: Vec<String>,
     pub amends: Vec<String>,
@@ -251,6 +253,10 @@ fn parse_adr(path: &Path) -> Result<Adr, Error> {
         path: path.to_path_buf(),
         source,
     })?;
+    parse_adr_text(path, &text)
+}
+
+fn parse_adr_text(path: &Path, text: &str) -> Result<Adr, Error> {
     let lines: Vec<_> = text.lines().collect();
     if lines.first() != Some(&"---") {
         return Err(diag(path, 1, 1, "ADR must start with YAML front matter"));
@@ -332,6 +338,7 @@ fn parse_adr(path: &Path) -> Result<Adr, Error> {
     }
     Ok(Adr {
         id,
+        source: path.to_path_buf(),
         status,
         supersedes: meta.remove("supersedes").unwrap_or_default(),
         amends: meta.remove("amends").unwrap_or_default(),
@@ -754,11 +761,7 @@ pub fn lower_to_project_model(adrs: &[Adr], spec: &EffectiveSpecification) -> Pr
     };
     for adr in adrs {
         let id = DecisionId(adr.id.clone());
-        let source = adr
-            .clauses
-            .first()
-            .map(|c| c.span.filename.clone())
-            .unwrap_or_default();
+        let source = adr.source.clone();
         let provenance = Provenance {
             kind: ProvenanceKind::HumanAuthored,
             source: source.clone(),

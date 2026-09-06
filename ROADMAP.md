@@ -105,8 +105,9 @@ imply that a consuming project has enabled CI or that stable has been released.
 
 - [x] Configure broader macOS library/CLI coverage and Windows core regressions;
   isolate POSIX execution fixtures and keep Rust 1.98.0 as the tested minimum.
-- [ ] Confirm the expanded platform jobs and CodeQL on the exact pushed commit;
-  only then update the supported-platform claims.
+- [x] Confirm the expanded platform jobs and CodeQL on exact pushed commit
+  `b321057ce3bf9bfc80d2ddbfa137026cea58a96f`; the
+  [support matrix](docs/SUPPORTED_PLATFORMS.md) records the scope and run links.
 - [x] Provide environment/reproducibility issue forms and an explicit compatible
   patch policy without changing frozen v1 contracts.
 - [x] Provide beta-gate and isolated-pilot review templates.

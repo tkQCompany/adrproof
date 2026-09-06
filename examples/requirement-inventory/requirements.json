@@ -1,0 +1,35 @@
+{
+  "schema_version": "adrproof-requirements-v1alpha1",
+  "adrs": [{
+    "id": "ADR-1",
+    "source": "architecture.md",
+    "requirements": [
+      {
+        "id": "REQ-boundary",
+        "kind": "normative",
+        "start_line": 6,
+        "end_line": 6,
+        "mapping": "mapped",
+        "constraints": ["ADR-1:C1"],
+        "reason": "Declared model constraint only; not proof of implementation conformance."
+      },
+      {
+        "id": "REQ-recovery",
+        "kind": "normative",
+        "start_line": 7,
+        "end_line": 7,
+        "mapping": "unmapped",
+        "constraints": []
+      },
+      {
+        "id": "RATIONALE-storage",
+        "kind": "rationale",
+        "start_line": 8,
+        "end_line": 8,
+        "mapping": "unmapped",
+        "constraints": [],
+        "reason": "Motivation, not an independently specified obligation."
+      }
+    ]
+  }]
+}

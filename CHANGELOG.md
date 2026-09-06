@@ -8,8 +8,18 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ## [Unreleased]
 
+### Added
+
+- Experimental read-only `inventory` command and independent v1alpha1 input/report
+  contracts. Requirement fragments and declared many-to-many ADRLogic mappings
+  extend the Project Intent Model; missing ADRs, uninventoried decisions, unmapped
+  requirements and partial mappings remain visible. Reports include content hashes
+  but never claim approved formalization, proof PASS or a required-evidence gate.
+
 ### Fixed
 
+- Prose-only ADRs retain their actual source in the intent model and proof graph
+  instead of using an empty path. No provider wire/report fields changed.
 - Relevant Cargo manifest fingerprints now use root-relative identities even
   when Cargo canonicalizes an aliased project root (for example `/var` on
   macOS). Manifest edits correctly stale evidence instead of leaving a false
@@ -37,7 +47,9 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
   waiting period. Published protocol/report v1 compatibility remains unchanged.
 - Portable CI now includes library and command-help regressions; POSIX execution
   fixtures are explicitly separated from platform-neutral core tests. Expanded
-  macOS/Windows coverage awaits its first remote run.
+  macOS/Windows coverage and CodeQL passed for `b321057`; the support matrix
+  records exact evidence. New inventory regressions are scheduled on both runners
+  and await their own post-push result.
 - CI adoption guidance separates provider conformance from an architectural
   gate, with explicit input pins, negative controls, and staged approval.
 - Beta and isolated-pilot review templates, reproducibility issue reporting,

@@ -1,8 +1,9 @@
 # Current framework plan — ADRProof
 
 Updated: 2026-09-06. Canonical language: English; the filename is retained as
-requested by the maintainer. Status: **accepted direction, implementation pending**.
-Baseline inspected: `96948ce`. This document is a durable implementation compass,
+requested by the maintainer. Status: **accepted direction, first inventory slice implemented**.
+Initial baseline: `96948ce`; first implementation based on pushed `b321057`.
+This document is a durable implementation compass,
 not a claim that the target capabilities already exist or permission to publish.
 
 ## 1. Purpose and authority
@@ -199,3 +200,52 @@ this file. Push/release remain maintainer actions.
   controls, with the interface to P06 review binding defined before code changes.
 - Stable product target: 1.0 after sustained usefulness across multiple projects
   and mature specification languages; no calendar or community-feedback gate.
+
+### Implementation checkpoint 2026-09-06 — declared inventory
+
+- Scope: bounded portions of P01/P02/P03/P04, reusing P29/P31 foundations;
+  compatible P42 platform-documentation backlog closed for pushed `b321057`.
+  Do not mark these broad product criteria complete: approved formalizations,
+  general applicability/exclusions and heterogeneous evidence links remain absent.
+- Artifacts: [inventory contract](docs/REQUIREMENT_INVENTORY.md),
+  [implementation](src/inventory.rs), [controls](tests/inventory.rs), and
+  [neutral example](examples/requirement-inventory/requirements.json).
+  `inventory` inspects a nonempty declared ADR set and discovered ADRs, exposes
+  missing/partial/unmapped entries and lifecycle, and adds selected requirements
+  plus many-to-many declared ADRLogic links to the existing Project Intent Model.
+  Prose-only decision provenance now retains its actual source.
+- Authority and compatibility: independent `adrproof-requirements-v1alpha1` and
+  `adrproof-inventory-report-v1alpha1` surfaces. `RECORDED_UNREVIEWED` (exit 0)
+  means no detected inventory gaps, not approved interpretation or proof PASS;
+  `INCOMPLETE` exits 3. No provider/report v1 or persisted evidence schema change,
+  no new runtime dependency, no new backend, no LLM execution and no consumer CI.
+- P06 interface was defined before implementation: exact parsed inventory/ADR
+  bytes have content fingerprints; requirement IDs, selections, kind and mapped
+  constraints are explicit. Future review must bind these plus reviewer identity
+  and both sides' hashes. No approval is synthesized by inventory or verification.
+- Positive/negative controls: 15 new inventory tests cover declared many-to-many
+  and cross-ADR links, missing/deleted/uninventoried ADRs, lifecycle, inactive or
+  deleted constraints, unmapped/partial/no-normative entries, malformed/duplicate
+  input, path escape/symlinks, read-only CLI outcomes, stable relocation and
+  content changes with unchanged mtime. A prose edit changes fingerprints without
+  changing formal clauses; this tests the review input boundary, not an implemented
+  stale-review assessment. The clean-checkout smoke script includes the example.
+- Local validation: all 131 tests passed (`cargo test --locked --offline
+  --all-targets`), including the existing 116-test baseline; formatting and
+  Clippy with warnings denied passed. Documentation links, workflow policy and
+  whitespace checks passed after staging, including the newly added documents.
+- Limitations: selections and rationale classification are author declarations;
+  omitted sentences or an edited inventory baseline cannot be detected by hashes
+  alone. The command does not approve mappings, consult evidence, run providers
+  or gate existing `check`/`status`/`diagnose`. Protect specification changes in
+  external review. A stable checkout is required; this is not an atomic snapshot.
+- P42: exact successful CI/CodeQL links and tested platform scope are recorded
+  in [supported platforms](docs/SUPPORTED_PLATFORMS.md). The newly added portable
+  inventory test step awaits its own post-push result. Branch-protection review,
+  release metadata and private pilot/CI approvals remain owner-controlled backlog;
+  they were not inferred from this implementation request.
+- Next bounded slice: P06/P07/P08 hash-bound formalization-review records and
+  independent current/stale/missing review assessment, starting with whole-file
+  invalidation. Add negative controls where old logic passes but prose/mapping
+  changed, and an explicit no-semantic-change reapproval. Do not yet aggregate
+  these into a required-evidence gate or select a Rust verifier.

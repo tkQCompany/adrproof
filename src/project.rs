@@ -25,6 +25,7 @@ id_type!(ConstraintId);
 id_type!(FactId);
 id_type!(ProofObligationId);
 id_type!(EvidenceId);
+id_type!(RequirementId);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -76,6 +77,34 @@ pub struct IntentConstraint {
     pub formula: RelationalFormula,
     pub provenance: Provenance,
     pub applicability: Applicability,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RequirementKind {
+    Normative,
+    Rationale,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DeclaredMapping {
+    Unmapped,
+    Partial,
+    Mapped,
+}
+
+/// Author-declared selection and links, not an approved interpretation or proof.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct IntentRequirement {
+    pub id: RequirementId,
+    pub decision: DecisionId,
+    pub kind: RequirementKind,
+    pub provenance: Provenance,
+    pub end_line: usize,
+    pub mapping: DeclaredMapping,
+    pub constraints: Vec<ConstraintId>,
+    pub reason: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -222,6 +251,7 @@ pub enum GraphNode {
     Fact(FactId),
     ProofObligation(ProofObligationId),
     Evidence(EvidenceId),
+    Requirement(RequirementId),
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -241,6 +271,7 @@ pub enum LinkKind {
     EvidenceFor,
     Requires,
     RequiredBy,
+    DeclaredFormalization,
 }
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GraphEdge {
@@ -254,6 +285,8 @@ pub struct ProjectModel {
     pub artifacts: BTreeMap<ArtifactId, Artifact>,
     pub decisions: BTreeMap<DecisionId, Decision>,
     pub constraints: BTreeMap<ConstraintId, IntentConstraint>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub requirements: BTreeMap<RequirementId, IntentRequirement>,
     pub facts: BTreeMap<FactId, ProjectFact>,
     pub declarations: Vec<IntentDeclaration>,
     pub fact_coverage: Vec<FactCoverage>,
