@@ -73,6 +73,17 @@ evidence, but cannot issue a CI PASS and cannot validate their own translation.
 
 ## The semantic/specification gap
 
+Experimental [formalization reviews](FORMALIZATION_REVIEWS.md) record **unsigned
+external human attestations**, not facts extracted from code or solver evidence.
+`prepare` only emits a draft; `import` checks submitted bindings and appends a
+record. A reviewer name/reference does not authenticate a human, and content hashes
+do not prevent forgery or rollback by a writer of the entire store. Protect the
+approval documents, specification and review store from repair agents; authorize
+imports through an external human-reviewed, single-writer workflow. `CURRENT`
+means fresh under that trust boundary, never architectural PASS. Authentication,
+revocation and protected required-set enforcement are not implemented by this
+slice. Existing verification commands do not yet gate on these attestations.
+
 A formally consistent specification may be incomplete, vacuous, or mistranslate
 human intent. This is the **semantic/specification gap**. Solver success establishes
 only a property of the formal model, not that the model is the intended system.

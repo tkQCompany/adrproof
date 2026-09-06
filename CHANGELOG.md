@@ -10,6 +10,11 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Added
 
+- Experimental `review prepare`, `review import` and `review status`: independent
+  versioned human-attestation records, hash-bound current/stale assessment and
+  append-only per-requirement histories. Explicit no-semantic-change reapproval
+  needs no dummy contract edit. Neither fresh checks nor drafts renew a review;
+  identity authentication and required-evidence gating remain external/future work.
 - Experimental read-only `inventory` command and independent v1alpha1 input/report
   contracts. Requirement fragments and declared many-to-many ADRLogic mappings
   extend the Project Intent Model; missing ADRs, uninventoried decisions, unmapped
@@ -48,8 +53,9 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 - Portable CI now includes library and command-help regressions; POSIX execution
   fixtures are explicitly separated from platform-neutral core tests. Expanded
   macOS/Windows coverage and CodeQL passed for `b321057`; the support matrix
-  records exact evidence. New inventory regressions are scheduled on both runners
-  and await their own post-push result.
+  records exact evidence. Inventory regressions subsequently passed on both runners
+  for `75b2464`, with CodeQL successful too. Formalization-review regressions are
+  scheduled on both runners and await their own post-push result.
 - CI adoption guidance separates provider conformance from an architectural
   gate, with explicit input pins, negative controls, and staged approval.
 - Beta and isolated-pilot review templates, reproducibility issue reporting,

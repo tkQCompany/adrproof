@@ -19,9 +19,11 @@ requirements, explicit constraints and current evidence through one workflow,
 while retaining specialized verifiers. LLM feedback may help find compliant
 solutions, but neither faster generation nor violation-free proposals are
 guaranteed. An experimental [requirement inventory](docs/REQUIREMENT_INVENTORY.md)
-now detects declared omissions and partial ADRLogic mappings. Human-approved
-formalization reviews and an end-to-end required-evidence gate remain targets,
-not existing features. Implementation work follows the
+now detects declared omissions and partial ADRLogic mappings. Experimental
+[formalization reviews](docs/FORMALIZATION_REVIEWS.md) bind externally supplied
+human attestations to content hashes and assess them independently of proof
+freshness. Reviewer authentication and an end-to-end required-evidence gate remain
+outside this capability. Implementation work follows the
 [current framework plan](AKTUALNY_PLAN_RAMOWY.md) and its normative ADRs.
 
 ## Quick start

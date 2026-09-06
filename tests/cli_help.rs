@@ -14,6 +14,7 @@ const COMMANDS: &[&str] = &[
     "model",
     "correspondence",
     "inventory",
+    "review",
 ];
 
 fn adrproof() -> Command {

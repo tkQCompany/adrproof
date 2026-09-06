@@ -62,6 +62,8 @@ jobs:
         run: cargo test --locked --test cli_help
       - name: Run requirement inventory regressions
         run: cargo test --locked --test inventory
+      - name: Run formalization review regressions
+        run: cargo test --locked --test reviews
       - name: Run reference-provider CLI tests (macOS)
         if: runner.os == 'macOS'
         run: cargo test --locked --test provider_cli

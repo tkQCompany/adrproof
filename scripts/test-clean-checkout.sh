@@ -35,6 +35,25 @@ jq -e \
     and .gaps[0].requirement == "REQ-recovery"' \
   "$test_root/inventory.json" >/dev/null
 
+cargo run --locked -- review prepare REQ-boundary \
+  --spec-root examples/requirement-inventory --state-root "$test_root/review-state" --json \
+  > "$test_root/review-draft.json"
+jq -e '.schema_version == "adrproof-formalization-review-v1alpha1"
+  and .decision == "draft" and .reviewer == null and .rationale == null' \
+  "$test_root/review-draft.json" >/dev/null
+if cargo run --locked -- review status \
+  --spec-root examples/requirement-inventory --state-root "$test_root/review-state" --json \
+  > "$test_root/review-status.json"; then
+  echo "error: preparing a draft must not approve a requirement" >&2
+  exit 1
+else
+  review_exit=$?
+fi
+test "$review_exit" -eq 3
+test ! -e "$test_root/review-state"
+jq -e '.result == "INCOMPLETE" and .verification_status == "NOT_RUN"' \
+  "$test_root/review-status.json" >/dev/null
+
 mkdir -p "$test_root/state"
 cargo run --locked -- provider check component-manifest --json \
   --project-root examples/external-provider/project \

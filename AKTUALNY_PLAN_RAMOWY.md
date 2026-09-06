@@ -1,7 +1,7 @@
 # Current framework plan — ADRProof
 
 Updated: 2026-09-06. Canonical language: English; the filename is retained as
-requested by the maintainer. Status: **accepted direction, first inventory slice implemented**.
+requested by the maintainer. Status: **inventory and bounded formalization-review slices implemented**.
 Initial baseline: `96948ce`; first implementation based on pushed `b321057`.
 This document is a durable implementation compass,
 not a claim that the target capabilities already exist or permission to publish.
@@ -94,9 +94,12 @@ specific implementation and verification references; until then leave unchecked.
 - [ ] P03 — Link requirement fragments to one or many checks and shared evidence.
 - [ ] P04 — Separate normative requirements from rationale and alternatives.
 - [ ] P05 — Define supported applicability contexts; expose unsupported ones.
-- [ ] P06 — Bind text/formalization correspondence to reviewed content hashes.
-- [ ] P07 — Detect changed requirements requiring formalization reassessment.
-- [ ] P08 — Allow reviewed no-semantic-change edits without dummy contract edits.
+- [x] P06 — Bind text/formalization correspondence to reviewed content hashes
+  (current ADRLogic inventory; unsigned external human-attestation trust boundary).
+- [x] P07 — Detect changed requirements requiring formalization reassessment
+  (conservative inventory/ADR byte invalidation; no automatic semantic equivalence).
+- [x] P08 — Allow reviewed no-semantic-change edits without dummy contract edits
+  (explicit reapproval, unchanged effective formalization/target projection).
 - [ ] P09 — Give textual models an explicit specification or generated-view role.
 
 ### Usability (ADRP-0008)
@@ -155,8 +158,9 @@ Closed/Partial coverage, immutable evidence/freshness, scenarios, native-test
 imports, Quint models, bounded correspondence, bundles/signatures and diagnostics.
 See [architecture](docs/architecture.md) and [trust model](docs/TRUST_MODEL.md).
 
-Not established at this checkpoint: complete prose-requirement coverage,
-hash-bound formalization approval, an end-to-end required inventory/review gate,
+Not established at the initial checkpoint: complete prose-requirement coverage,
+hash-bound formalization approval (now implemented within the bounded review slice
+below), an end-to-end required inventory/review gate,
 a Prusti adapter, comprehensive Rust correctness, a turnkey architect workflow,
 or measured long-term value and large-inventory performance. Existing capabilities
 can satisfy checklist items only after their relevant acceptance boundary is
@@ -249,3 +253,54 @@ this file. Push/release remain maintainer actions.
   invalidation. Add negative controls where old logic passes but prose/mapping
   changed, and an explicit no-semantic-change reapproval. Do not yet aggregate
   these into a required-evidence gate or select a Rust verifier.
+
+### Implementation checkpoint 2026-09-06 — formalization reviews (P06–P08)
+
+- Based on pushed `75b2464`. Its CI, including macOS/Windows inventory tests,
+  and CodeQL are now both successful; exact run links are retained in
+  [supported platforms](docs/SUPPORTED_PLATFORMS.md). Review tests await the new
+  implementation's own post-push CI, not inferred success from that baseline.
+- Implemented `review prepare`, `review import` and `review status` according to
+  [the contract](docs/FORMALIZATION_REVIEWS.md), written before implementation.
+  [Code](src/reviews.rs) reuses Project Intent Model requirement snapshots and
+  input fingerprints, with separately versioned attestation records rather than
+  pretending a review is solver evidence. Both spec and state roots are explicit.
+- P06–P08 are complete for the current ADRLogic inventory and stated trust
+  boundary: whole inventory/ADR hashes, normalized selection/mapping and effective
+  global formalization bind one review. Draft preparation cannot approve. Import
+  validates an externally supplied attestation against current inputs; reapproval
+  appends to a content-addressed per-requirement chain without overwriting history.
+  Assessment reports current/stale/missing/ineligible/inactive/removed separately.
+- `no_semantic_change` requires a previous review, reviewer/rationale and an
+  unchanged global formalization/selected-target projection. Prose or formatting
+  can be reapproved without editing clauses. This is not an equivalence proof.
+- Verification: 19 new [review controls](tests/reviews.rs), 150 tests total,
+  passed locally with the locked offline all-target suite; formatting and Clippy
+  with warnings denied passed. Controls cover unchanged-mtime prose edits with
+  a fresh consistency PASS, stale/missing proof with a current review, malformed
+  and tampered input, missing predecessors, branches, stale-head replay, deleted
+  requirements/targets, lifecycle, cross-ADR inputs and root relocation/aliases.
+  The consistency integration test uses a finite Boolean fixture backend, not a
+  real Z3 installation or any claim of new backend qualification.
+- Validation note: one subsequent full run hit `Text file busy` (OS error 26)
+  while starting executables in the unchanged external-provider tests
+  `schema_and_identity_mismatches_are_rejected` and
+  `nonzero_exit_and_output_limits_fail_closed`. The next full 150-test run and
+  Clippy passed; each affected test also passed three isolated repetitions.
+  Root cause is not established. Keep this intermittent process-fixture issue
+  visible for a separate reproduction; no automatic retry or v1 behavior change
+  was added to conceal it.
+- Safety: no real requirement was approved, no provider/inventory v1alpha1 report
+  or proof ledger schema changed, no dependency/package bump, external project
+  mutation, consumer CI, model-call experiment or publication occurred.
+- Limits: unsigned attestation is not authenticated human identity. A protected,
+  externally authorized single-writer import boundary is required; arbitrary
+  store writes or tail deletion are not defeated by hashes. No revocation or
+  protected baseline for removed/narrowed obligations exists yet. Global byte
+  invalidation can be costly; large-inventory scaling is unqualified. Existing
+  `check`/`status`/`diagnose` still do not enforce a required-review/evidence gate.
+- Next bounded step: define the P36/P37 protected required-set and aggregate-gate
+  contract, then a minimal read-only composition using existing review and evidence
+  assessments. Require nonempty explicit obligations, current reviews, current
+  scoped evidence and negative controls against removal/narrowing. Do not enable
+  consuming CI or infer approval of changed specifications from this checkpoint.

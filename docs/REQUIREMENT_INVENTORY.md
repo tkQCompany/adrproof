@@ -86,14 +86,16 @@ enforce or load this inventory; consumers must not substitute it for those check
 The report provides content SHA-256 fingerprints of the exact inventory and ADR
 bytes parsed, including entire formalization-bearing files. No mtime is used.
 The model carries requirement/decision IDs, source selection, kind, declared
-mapping and target constraint IDs. A future independently versioned approval must
+mapping and target constraint IDs. An independently versioned approval must
 bind these identities and semantics plus both sides' content hashes and reviewer
 provenance. Start with whole-file invalidation, including shared declarations and
 cross-ADR formalization files; narrowing hash scope requires a separate tested
 contract. A prose edit or changed mapping must require reassessment even if the
 old logic still passes. Rerunning this command must never create an approval.
 
-There is no approval store, review-freshness assessment, protected inventory
+The separate [review workflow](FORMALIZATION_REVIEWS.md) now implements hash-bound
+external attestations and review-freshness assessment. It does not change this
+inventory report's `NOT_ASSESSED` result. There is no protected inventory
 baseline, required-evidence aggregate gate, specialized-verifier mapping or
 incremental checking yet. Protect specification changes by code review outside
 ADRProof in the meantime. The inspected checkout must remain unchanged during

@@ -18,6 +18,7 @@ pub mod policy;
 pub mod project;
 pub mod query;
 pub mod quint;
+pub mod reviews;
 pub mod roots;
 pub mod scenario;
 pub mod sql_migrations;

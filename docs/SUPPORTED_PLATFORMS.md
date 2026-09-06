@@ -9,8 +9,8 @@ portable external-provider protocol surface.
 | Environment | Continuously verified scope | Support level |
 | --- | --- | --- |
 | `ubuntu-latest` GitHub runner | Formatting, Clippy, full Rust test suite, external-provider process tests, dependency audit, and reproducible source archive | Primary |
-| `macos-latest` GitHub runner | Library regressions, CLI help, reference-provider CLI tests, response conformance and a native provider process invocation | Tested library and provider surfaces |
-| `windows-latest` GitHub runner | Platform-neutral library regressions, CLI help, response conformance and a native provider process invocation | Tested core and provider surfaces; no POSIX backends |
+| `macos-latest` GitHub runner | Library regressions, CLI help, requirement inventory, reference-provider CLI tests, response conformance and a native provider process invocation | Tested library and provider surfaces |
+| `windows-latest` GitHub runner | Platform-neutral library regressions, CLI help, requirement inventory, response conformance and a native provider process invocation | Tested core and provider surfaces; no POSIX backends |
 
 The runner labels identify the environments exercised by CI; they do not
 promise a particular CPU architecture or operating-system release beyond the
@@ -28,10 +28,12 @@ floating stable toolchain. Passing stub-backed fixtures does not qualify every
 real external verifier installation.
 
 This closes the rerun requirement after CI #20 exposed canonical Cargo path and
-Windows evidence-filename defects. The new experimental requirement-inventory
-suite is also configured for both portable runners, but its first remote result
-must be checked after the implementation commit is pushed; the baseline above
-does not claim to have exercised this new feature.
+Windows evidence-filename defects. The requirement-inventory suite subsequently
+passed on both portable runners for
+`75b246411da6e3ba9c1d23e7f9ca572ad71e883a`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34036762730)
+and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34036762711).
+The new formalization-review suite is configured for both runners, but awaits
+its own post-push remote result. This baseline does not qualify that new suite.
 
 ## Toolchain and external programs
 

@@ -31,6 +31,8 @@ English is the canonical language for normative documentation. See
 
 - [`REQUIREMENT_INVENTORY.md`](REQUIREMENT_INVENTORY.md) — experimental declared
   inventory and mapping gaps; not formalization approval or proof evidence.
+- [`FORMALIZATION_REVIEWS.md`](FORMALIZATION_REVIEWS.md) — experimental hash-bound
+  human attestations and current/stale review assessment, separate from proof.
 - [`SCENARIO_EVIDENCE.md`](SCENARIO_EVIDENCE.md)
 - [`NATIVE_TEST_EVIDENCE_AND_BUNDLES.md`](NATIVE_TEST_EVIDENCE_AND_BUNDLES.md)
 - [`SIGNED_BUNDLES_SCHEMAS_POLICIES_SARIF.md`](SIGNED_BUNDLES_SCHEMAS_POLICIES_SARIF.md)

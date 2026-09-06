@@ -17,6 +17,7 @@ const COMMANDS: &[&str] = &[
     "model",
     "correspondence",
     "inventory",
+    "review",
 ];
 
 fn main() {
@@ -108,6 +109,9 @@ fn print_help(command: Option<&str>) {
             "adrproof status [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
         }
         Some("inventory") => "adrproof inventory [ROOT] [--spec-root PATH] [--json]",
+        Some("review") => {
+            "adrproof review <prepare REQUIREMENT|import --report PATH|status> --spec-root PATH --state-root PATH [--json]"
+        }
         Some("diagnose") => {
             "adrproof diagnose [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json]"
         }
@@ -281,6 +285,9 @@ fn parse_cli() -> Result<Cli, Error> {
 }
 
 fn real_main() -> Result<i32, Error> {
+    if std::env::args().nth(1).as_deref() == Some("review") {
+        return review_command(std::env::args().skip(2).collect());
+    }
     let cli = parse_cli()?;
     let legacy = cli
         .legacy_root
@@ -374,6 +381,92 @@ fn real_main() -> Result<i32, Error> {
             };
             report(adrproof::run_check_with_roots(&roots, &backend)?, cli.json)
         }
+    }
+}
+
+fn review_command(args: Vec<String>) -> Result<i32, Error> {
+    let invalid = |message: &str| Error::Diagnostic {
+        path: "<cli>".into(),
+        line: 1,
+        column: 1,
+        message: message.into(),
+    };
+    let mut paths = BTreeMap::new();
+    let mut positional = Vec::new();
+    let mut json = false;
+    let mut index = 0;
+    while index < args.len() {
+        match args[index].as_str() {
+            "--json" => json = true,
+            "--spec-root" | "--state-root" | "--report" => {
+                let flag = args[index].as_str();
+                index += 1;
+                let value = args
+                    .get(index)
+                    .filter(|v| !v.starts_with('-'))
+                    .ok_or_else(|| invalid("review option requires a path"))?;
+                if paths.insert(flag, PathBuf::from(value)).is_some() {
+                    return Err(invalid("repeated review path option"));
+                }
+            }
+            value if value.starts_with('-') => return Err(invalid("unsupported review option")),
+            value => positional.push(value),
+        }
+        index += 1;
+    }
+    let spec = paths
+        .get("--spec-root")
+        .ok_or_else(|| invalid("review requires --spec-root"))?;
+    let state = paths
+        .get("--state-root")
+        .ok_or_else(|| invalid("review requires --state-root"))?;
+    let report_path = paths.get("--report");
+    match positional.as_slice() {
+        ["prepare", id] if report_path.is_none() => {
+            let draft = adrproof::reviews::prepare(spec, state, id)?;
+            println!("{}", serde_json::to_string_pretty(&draft).unwrap());
+            Ok(0)
+        }
+        ["import"] => {
+            let id = adrproof::reviews::import(
+                spec,
+                state,
+                report_path.ok_or_else(|| invalid("review import requires --report"))?,
+            )?;
+            println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                "schema_version": adrproof::reviews::REPORT_SCHEMA, "result": "IMPORTED", "review_id": id,
+                "authority": "unsigned_human_attestation", "verification_status": "NOT_RUN"
+            })).unwrap());
+            Ok(0)
+        }
+        ["status"] if report_path.is_none() => {
+            let report = adrproof::reviews::status(spec, state)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!(
+                    "{} — unsigned human attestations; verification NOT_RUN",
+                    report.result
+                );
+                for item in &report.requirements {
+                    println!("{}: {}", item.requirement.0, item.status);
+                    for input in &item.changed_inputs {
+                        println!("  changed: {input}");
+                    }
+                    for diagnostic in &item.diagnostics {
+                        println!("  {diagnostic}");
+                    }
+                }
+                for gap in &report.inventory_gaps {
+                    println!("  inventory: {} {}", gap.code, gap.decision);
+                }
+                println!("Review freshness is not architectural PASS.");
+            }
+            Ok(report.exit_code())
+        }
+        _ => Err(invalid(
+            "use review prepare REQUIREMENT, review import --report PATH, or review status",
+        )),
     }
 }
 

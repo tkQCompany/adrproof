@@ -59,6 +59,14 @@ must use a new identifier, not reinterpret an old report. No formalization-revie
 or proof authority is attached to this surface. Provider protocol/report v1 and
 persisted proof evidence schemas are unchanged.
 
+Experimental formalization reviews have separate
+`adrproof-formalization-review-v1alpha1` record and
+`adrproof-review-report-v1alpha1` result identifiers. Their
+[contract](FORMALIZATION_REVIEWS.md) defines unsigned human-attestation authority,
+content-bound freshness and history. They neither alter inventory v1alpha1 nor
+turn a proof result into review approval. Incompatible changes require a new
+identifier. No release or package-version bump is implied by their implementation.
+
 - patch package releases preserve supported protocol and schema behavior;
 - adding support for a new protocol does not remove older supported protocols;
 - removing a protocol requires a documented deprecation cycle;

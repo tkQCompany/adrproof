@@ -55,9 +55,12 @@ must be independently versioned; published protocol/report v1 is unchanged.
 
 This decision specifies target behavior, not a declaration of full implementation.
 The first [declared-inventory slice](../REQUIREMENT_INVENTORY.md) implements selected
-requirements and mapping-gap inspection. Approved formalization reviews and a
-required-evidence gate remain absent; existing evidence freshness is not yet a
-complete formalization-review mechanism.
+requirements and mapping-gap inspection. The subsequent
+[formalization-review slice](../FORMALIZATION_REVIEWS.md) binds unsigned external
+human attestations to inventory/ADR hashes and independently assesses current,
+stale and missing reviews. It supports explicit no-semantic-change reapproval.
+Authentication, scope-removal approval and a required-evidence gate remain outside
+that slice. Review records are not solver evidence and are not renewed by a check.
 Acceptance of this ADR must not be represented by a self-asserted Boolean proof
 that the implementation complies.
 
