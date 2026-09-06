@@ -8,6 +8,15 @@ is not a prerequisite.
 
 ## What is being gated?
 
+The experimental [read-only required-set gate](REQUIRED_GATE.md) composes current
+formalization reviews with current evidence under an externally pinned baseline.
+It is a bounded implementation, not a replacement for the integration contract
+below: Cargo/external-provider projects are currently unsupported, and
+scenario/model/correspondence checks are not included. Do not enable a consumer
+workflow merely because this command exists. Protect the baseline pin and stores
+outside the candidate/repair agent; never calculate the trusted pin from the
+candidate's baseline as part of accepting that same candidate.
+
 `provider check --json` tests configured provider conformance. It does not check
 architectural obligations. `check --json` combines the effective specification
 and extracted facts and reports consistency. SAT means those inputs are

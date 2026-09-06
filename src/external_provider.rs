@@ -108,6 +108,23 @@ pub fn run_configured(roots: &VerificationRoots) -> Result<Vec<ExternalProviderR
     run_selected(roots, None)
 }
 
+pub(crate) fn requires_execution(roots: &VerificationRoots) -> Result<bool, Error> {
+    let Some(path) = selected_config_path(roots) else {
+        return Ok(false);
+    };
+    let bytes = fs::read(&path).map_err(|source| Error::Io {
+        path: path.clone(),
+        source,
+    })?;
+    let config: Configuration = serde_json::from_slice(&bytes).map_err(|error| {
+        failure(
+            DIAGNOSTIC_CONFIGURATION,
+            format!("{}: {error}", path.display()),
+        )
+    })?;
+    Ok(!config.external_providers.is_empty())
+}
+
 pub fn run_selected(
     roots: &VerificationRoots,
     selected: Option<&str>,

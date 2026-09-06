@@ -137,10 +137,14 @@ specific implementation and verification references; until then leave unchecked.
 - [ ] P34 — Distinguish signed results from independently checkable proof certificates.
 - [ ] P35 — Check compatible assumptions/scopes when composing required results.
 - [ ] P36 — Require approval for removed obligations or narrowed gate inventories.
+  The first protected-baseline slice is implemented below; consumer trust-boundary
+  qualification and additional evidence adapters remain open.
 
 ### Operations and product maturity (ADRP-0008, ADRP-0009)
 
 - [ ] P37 — Evaluate an explicit required check set with one unambiguous outcome.
+  Read-only ADRLogic/SQL and selected native-test composition is implemented;
+  this is not yet an all-adapter or consumer-CI gate.
 - [ ] P38 — Prioritize actionable diagnostics over raw backend output.
 - [ ] P39 — Support reviewed exceptions/migrations without rewriting failures.
 - [ ] P40 — Preserve project/spec/state separation and clarify its safety boundary.
@@ -304,3 +308,53 @@ this file. Push/release remain maintainer actions.
   assessments. Require nonempty explicit obligations, current reviews, current
   scoped evidence and negative controls against removal/narrowing. Do not enable
   consuming CI or infer approval of changed specifications from this checkpoint.
+
+### Implementation checkpoint 2026-09-06 — protected required-set gate (P36/P37 slice)
+
+- Based on pushed `0cfdef9`, with successful CI (including macOS/Windows reviews)
+  and CodeQL recorded in [supported platforms](docs/SUPPORTED_PLATFORMS.md).
+- Wrote [the required-set contract](docs/REQUIRED_GATE.md) before implementation,
+  as a bounded application of ADRP-0007/0008. Added `gate prepare` (draft only)
+  and `gate evaluate` (read-only). New required-set/report v1alpha1 schemas do not
+  change existing inventory/review/provider protocols or proof-ledger formats.
+- P36 slice: an independently protected SHA-256 pins an externally approved
+  nonempty inventory, every active constraint, exact current review heads and
+  selected native-test definitions. Removing/narrowing requirements, changing
+  lifecycle or rolling back an attestation cannot pass against the old pin.
+  Approval of a new baseline/pin is separate from implementation repair and
+  formalization review. No real requirement or baseline was approved here.
+- P37 slice: all global consistency clauses remain selected; the explicit full
+  backend version/timeout, latest evidence inputs (including generated SMT),
+  current reviews and scoped Closed coverage are assessed. Optional native-test
+  checks reuse imported evidence/freshness and non-vacuity semantics. Results
+  distinguish PASS, FAIL, INCOMPLETE and ERROR, retaining per-check identity and
+  freshness. There is no fallback to an older passing record.
+- Deliberate boundary: freshness extraction for Cargo/external providers can
+  execute processes today. This gate rejects those projects explicitly rather
+  than executing providers or pretending their cached facts are fresh. Only
+  in-process ADRLogic/static SQL and selected imported native-test checks are
+  supported. Scenario/model/correspondence remain independent existing controls.
+  Partial coverage for a used relation conservatively blocks this gate even if
+  a positive-only constraint could pass the underlying check.
+- Local verification: 18 new [gate regressions](tests/gate.rs); the full locked,
+  offline suite passed all 168 tests. Formatting, Clippy with denied warnings and
+  workflow policy checks passed. New controls exercise altered pins, empty or
+  narrowed scope, stale prose with a fresh PASS, review-head rollback, missing/
+  stale/unknown/latest-failing proof, native definitions and evidence, SQL input
+  freshness and coverage, malformed state, strict CLI, relocation, disjoint state
+  and input aliases/cycles. Synthetic proof records test composition, not Z3
+  correctness or new real-backend qualification. Gate tests are added to the
+  portable CI matrix; their own post-push result is still required.
+- Trust/limits: the binary, baseline pin, runner and evidence/review stores must
+  be protected outside the repair agent. Unsigned attestations are not authenticated
+  approvals; evidence is not independently replayed. No atomic snapshot, protection
+  against an authorized malicious evidence writer, automatic safe repair, universal
+  program proof or scalability qualification is claimed. Plain bounded-depth
+  native-input/migration trees are required; child aliases are rejected.
+- No private integration was changed, consuming CI enabled, release/tag published,
+  package version bumped or crates.io publication attempted.
+- Next bounded step: after this commit's CI, design and qualify the missing
+  Cargo/external-provider freshness boundary using a neutral fixture and explicit
+  isolated execution or snapshot validation. Preserve the read-only gate contract;
+  do not import cached provider facts as current on trust alone. Keep P36/P37 open
+  for broader adapter composition and external trust-boundary qualification.

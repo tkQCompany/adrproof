@@ -18,6 +18,7 @@ const COMMANDS: &[&str] = &[
     "correspondence",
     "inventory",
     "review",
+    "gate",
 ];
 
 fn main() {
@@ -95,6 +96,9 @@ fn print_help(command: Option<&str>) {
         }
         Some("check") => {
             "adrproof check [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--policy PATH] [--sarif PATH] [--json]"
+        }
+        Some("gate") => {
+            "adrproof gate <prepare --backend-version VERSION --timeout-ms N [--native-test ID]|evaluate --baseline PATH --baseline-sha256 SHA256> --project-root PATH --spec-root PATH --state-root PATH [--json]"
         }
         Some("facts") => {
             "adrproof facts [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json] [--summary]"
@@ -285,6 +289,23 @@ fn parse_cli() -> Result<Cli, Error> {
 }
 
 fn real_main() -> Result<i32, Error> {
+    if std::env::args().nth(1).as_deref() == Some("gate") {
+        let args = std::env::args().skip(2).collect::<Vec<_>>();
+        return match gate_command(&args) {
+            Ok(code) => Ok(code),
+            Err(error) => {
+                if args.iter().any(|a| a == "--json") {
+                    println!("{}", serde_json::to_string_pretty(&serde_json::json!({
+                        "schema_version": adrproof::gate::REPORT_SCHEMA, "result": "ERROR", "exit_code": 2,
+                        "diagnostics": [error.to_string()]
+                    })).unwrap());
+                } else {
+                    eprintln!("ERROR — {error}");
+                }
+                Ok(2)
+            }
+        };
+    }
     if std::env::args().nth(1).as_deref() == Some("review") {
         return review_command(std::env::args().skip(2).collect());
     }
@@ -381,6 +402,102 @@ fn real_main() -> Result<i32, Error> {
             };
             report(adrproof::run_check_with_roots(&roots, &backend)?, cli.json)
         }
+    }
+}
+
+fn gate_command(args: &[String]) -> Result<i32, Error> {
+    let invalid = |message: &str| Error::Diagnostic {
+        path: "<cli>".into(),
+        line: 1,
+        column: 1,
+        message: message.into(),
+    };
+    let action = args
+        .first()
+        .ok_or_else(|| invalid("gate requires prepare or evaluate"))?;
+    let mut options = BTreeMap::new();
+    let mut native_ids = Vec::new();
+    let mut json = false;
+    let mut index = 1;
+    while index < args.len() {
+        let flag = args[index].as_str();
+        if flag == "--json" {
+            if json {
+                return Err(invalid("repeated --json"));
+            }
+            json = true;
+        } else {
+            let allowed = matches!(flag, "--project-root" | "--spec-root" | "--state-root")
+                || (action == "prepare"
+                    && matches!(flag, "--backend-version" | "--timeout-ms" | "--native-test"))
+                || (action == "evaluate" && matches!(flag, "--baseline" | "--baseline-sha256"));
+            if !allowed {
+                return Err(invalid("unsupported gate option or positional argument"));
+            }
+            index += 1;
+            let value = args
+                .get(index)
+                .filter(|v| !v.starts_with('-'))
+                .ok_or_else(|| invalid("gate option requires a value"))?;
+            if flag == "--native-test" {
+                native_ids.push(value.clone());
+            } else if options.insert(flag, value.as_str()).is_some() {
+                return Err(invalid("repeated gate option"));
+            }
+        }
+        index += 1;
+    }
+    let required = |flag| {
+        options
+            .get(flag)
+            .copied()
+            .ok_or_else(|| invalid("missing required gate option; see gate --help"))
+    };
+    let roots = VerificationRoots::explicit(
+        Path::new(required("--project-root")?),
+        Path::new(required("--spec-root")?),
+        Path::new(required("--state-root")?),
+    );
+    match action.as_str() {
+        "prepare" => {
+            let timeout = required("--timeout-ms")?
+                .parse()
+                .map_err(|_| invalid("invalid timeout"))?;
+            let draft = adrproof::gate::prepare(
+                &roots,
+                required("--backend-version")?,
+                timeout,
+                &native_ids,
+            )?;
+            println!("{}", serde_json::to_string_pretty(&draft).unwrap());
+            Ok(0)
+        }
+        "evaluate" => {
+            let report = adrproof::gate::evaluate(
+                &roots,
+                Path::new(required("--baseline")?),
+                required("--baseline-sha256")?,
+            )?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report).unwrap());
+            } else {
+                println!(
+                    "{} — protected required set; selected checks only",
+                    report.result
+                );
+                for check in &report.checks {
+                    println!(
+                        "{}: {:?} ({:?})",
+                        check.obligation, check.status, check.freshness
+                    );
+                }
+                for diagnostic in &report.diagnostics {
+                    println!("  {diagnostic}");
+                }
+            }
+            Ok(report.exit_code())
+        }
+        _ => Err(invalid("gate requires prepare or evaluate")),
     }
 }
 

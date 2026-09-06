@@ -111,7 +111,7 @@ fn sha(value: &str) -> bool {
             .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
 }
 
-fn resolve(path: &Path) -> Result<PathBuf, Error> {
+pub(crate) fn resolve(path: &Path) -> Result<PathBuf, Error> {
     // Resolve existing aliases even when the final state directory is not created.
     let absolute = crate::roots::VerificationRoots::legacy(path, path).project_root;
     let mut ancestor = absolute.as_path();

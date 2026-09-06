@@ -22,8 +22,12 @@ guaranteed. An experimental [requirement inventory](docs/REQUIREMENT_INVENTORY.m
 now detects declared omissions and partial ADRLogic mappings. Experimental
 [formalization reviews](docs/FORMALIZATION_REVIEWS.md) bind externally supplied
 human attestations to content hashes and assess them independently of proof
-freshness. Reviewer authentication and an end-to-end required-evidence gate remain
-outside this capability. Implementation work follows the
+freshness. An experimental [protected required-set gate](docs/REQUIRED_GATE.md)
+now combines current reviews and current required evidence without running tools.
+Its first slice supports ADRLogic/static SQL and selected imported native tests;
+Cargo/external-provider projects are explicitly unsupported. Trusted baseline pins,
+reviewer authentication and evidence-store protection remain integration duties.
+Implementation work follows the
 [current framework plan](AKTUALNY_PLAN_RAMOWY.md) and its normative ADRs.
 
 ## Quick start

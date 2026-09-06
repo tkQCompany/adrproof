@@ -32,8 +32,11 @@ Windows evidence-filename defects. The requirement-inventory suite subsequently
 passed on both portable runners for
 `75b246411da6e3ba9c1d23e7f9ca572ad71e883a`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34036762730)
 and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34036762711).
-The new formalization-review suite is configured for both runners, but awaits
-its own post-push remote result. This baseline does not qualify that new suite.
+The formalization-review suite also passed on both portable runners for
+`0cfdef9672c4d98f0411b69cc5fb40e94c2894dd`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34038211681)
+and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34038211728).
+The new required-set gate suite is configured for both runners, but awaits its
+own post-push remote result. Earlier CI does not qualify the new gate suite.
 
 ## Toolchain and external programs
 

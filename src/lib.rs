@@ -12,6 +12,7 @@ pub mod cargo_facts;
 pub mod correspondence;
 pub mod evidence;
 pub mod external_provider;
+pub mod gate;
 pub mod inventory;
 pub mod native_test;
 pub mod policy;
@@ -1633,6 +1634,38 @@ pub fn load_project_model(root: &Path) -> Result<(ProjectModel, Vec<PathBuf>), E
 pub fn load_project_model_with_roots(
     roots: &roots::VerificationRoots,
 ) -> Result<(ProjectModel, Vec<roots::SemanticInput>), Error> {
+    load_project_model_internal(roots, true)
+}
+
+pub(crate) fn load_project_model_in_process(
+    roots: &roots::VerificationRoots,
+) -> Result<(ProjectModel, Vec<roots::SemanticInput>), Error> {
+    if roots
+        .project_root
+        .join("Cargo.toml")
+        .try_exists()
+        .map_err(|source| Error::Io {
+            path: roots.project_root.join("Cargo.toml"),
+            source,
+        })?
+        || external_provider::requires_execution(roots)?
+    {
+        return Err(Error::Diagnostic {
+            path: roots.project_root.clone(),
+            line: 1,
+            column: 1,
+            message:
+                "UNSUPPORTED_EXECUTION: read-only gate does not execute Cargo or external providers"
+                    .into(),
+        });
+    }
+    load_project_model_internal(roots, false)
+}
+
+fn load_project_model_internal(
+    roots: &roots::VerificationRoots,
+    executable_providers: bool,
+) -> Result<(ProjectModel, Vec<roots::SemanticInput>), Error> {
     let adrs = load_adrs(&roots.specification_root)?;
     let spec = effective(&adrs, false)?;
     let mut model = lower_to_project_model(&adrs, &spec);
@@ -1645,7 +1678,9 @@ pub fn load_project_model_with_roots(
         })
         .collect::<Vec<_>>();
     namespace_model_artifacts(&mut model, "spec", &roots.specification_root);
-    if let Some(provider) = cargo_facts::CargoMetadataProvider::discover(&roots.project_root) {
+    if executable_providers
+        && let Some(provider) = cargo_facts::CargoMetadataProvider::discover(&roots.project_root)
+    {
         let cargo = provider.extract()?;
         input_files.extend(cargo.input_files.iter().map(|path| roots::SemanticInput {
             identity: roots.project_identity(path),
@@ -1698,7 +1733,11 @@ pub fn load_project_model_with_roots(
         model.facts.extend(sql_model.facts);
         model.edges.extend(sql_model.edges);
     }
-    for external in external_provider::run_configured(roots)? {
+    for external in if executable_providers {
+        external_provider::run_configured(roots)?
+    } else {
+        Vec::new()
+    } {
         model.provider_inputs.insert(
             external.provider.id.clone(),
             external

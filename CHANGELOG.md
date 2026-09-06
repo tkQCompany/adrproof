@@ -10,11 +10,19 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Added
 
+- Experimental `gate prepare` and read-only `gate evaluate`, with separately
+  versioned required-set/report contracts. An independently pinned approved set
+  protects inventory, all active constraints, exact review heads and selected
+  native-test definitions. Current formalization reviews, evidence and scoped
+  coverage are composed into PASS/FAIL/INCOMPLETE/ERROR. The first slice supports
+  in-process ADRLogic/SQL and imported native-test evidence, not Cargo/external
+  execution or other evidence adapters. No consuming CI is enabled.
+
 - Experimental `review prepare`, `review import` and `review status`: independent
   versioned human-attestation records, hash-bound current/stale assessment and
   append-only per-requirement histories. Explicit no-semantic-change reapproval
   needs no dummy contract edit. Neither fresh checks nor drafts renew a review;
-  identity authentication and required-evidence gating remain external/future work.
+  identity authentication remains external; aggregation is a separate gate.
 - Experimental read-only `inventory` command and independent v1alpha1 input/report
   contracts. Requirement fragments and declared many-to-many ADRLogic mappings
   extend the Project Intent Model; missing ADRs, uninventoried decisions, unmapped
@@ -54,8 +62,9 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
   fixtures are explicitly separated from platform-neutral core tests. Expanded
   macOS/Windows coverage and CodeQL passed for `b321057`; the support matrix
   records exact evidence. Inventory regressions subsequently passed on both runners
-  for `75b2464`, with CodeQL successful too. Formalization-review regressions are
-  scheduled on both runners and await their own post-push result.
+  for `75b2464`, with CodeQL successful too. Formalization-review regressions and
+  CodeQL then passed for `0cfdef9`. Required-set gate regressions are scheduled on
+  both runners and await their own post-push result.
 - CI adoption guidance separates provider conformance from an architectural
   gate, with explicit input pins, negative controls, and staged approval.
 - Beta and isolated-pilot review templates, reproducibility issue reporting,

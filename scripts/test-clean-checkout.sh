@@ -54,6 +54,20 @@ test ! -e "$test_root/review-state"
 jq -e '.result == "INCOMPLETE" and .verification_status == "NOT_RUN"' \
   "$test_root/review-status.json" >/dev/null
 
+# The unreviewed example must not become an approved gate baseline.
+if cargo run --locked -- gate prepare --project-root examples/external-provider/project \
+  --spec-root examples/requirement-inventory --state-root "$test_root/gate-state" \
+  --backend-version 'documentation-only' --timeout-ms 1000 --json > "$test_root/gate.json"; then
+  echo "error: unreviewed requirements must not prepare a required set" >&2
+  exit 1
+else
+  gate_exit=$?
+fi
+test "$gate_exit" -eq 2
+test ! -e "$test_root/gate-state"
+jq -e '.schema_version == "adrproof-gate-report-v1alpha1" and .result == "ERROR"' \
+  "$test_root/gate.json" >/dev/null
+
 mkdir -p "$test_root/state"
 cargo run --locked -- provider check component-manifest --json \
   --project-root examples/external-provider/project \
