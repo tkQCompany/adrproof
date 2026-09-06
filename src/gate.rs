@@ -11,6 +11,8 @@ use std::path::Path;
 
 pub const SET_SCHEMA: &str = "adrproof-required-set-v1alpha1";
 pub const REPORT_SCHEMA: &str = "adrproof-gate-report-v1alpha1";
+pub const SNAPSHOT_SET_SCHEMA: &str = "adrproof-required-set-v1alpha2";
+pub const SNAPSHOT_REPORT_SCHEMA: &str = "adrproof-gate-report-v1alpha2";
 const GLOBAL: &str = "PO:project-consistency";
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -41,6 +43,10 @@ pub struct RequiredSet {
     pub backend_version: String,
     pub timeout_ms: u64,
     pub required_coverage: Vec<RequiredCoverage>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub producer_context_sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_policy: Option<Vec<crate::fact_snapshot::TreeEntry>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -64,6 +70,8 @@ pub struct Report {
     pub checks: Vec<Check>,
     pub diagnostics: Vec<String>,
     pub does_not_prove: Vec<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub fact_snapshot: Option<crate::fact_snapshot::Receipt>,
 }
 impl Report {
     pub fn exit_code(&self) -> i32 {
@@ -96,7 +104,7 @@ fn nonempty(value: &str) -> bool {
     !value.trim().is_empty() && !value.chars().any(char::is_control)
 }
 
-fn validate_roots(roots: &VerificationRoots) -> Result<(), Error> {
+pub(crate) fn validate_roots(roots: &VerificationRoots) -> Result<(), Error> {
     let state = reviews::resolve(&roots.state_root)?;
     for root in [&roots.project_root, &roots.specification_root] {
         let physical = fs::canonicalize(root).map_err(|source| Error::Io {
@@ -256,6 +264,34 @@ pub fn prepare(
     timeout_ms: u64,
     native_ids: &[String],
 ) -> Result<RequiredSet, Error> {
+    prepare_internal(roots, backend_version, timeout_ms, native_ids, None)
+}
+
+pub fn prepare_snapshot(
+    roots: &VerificationRoots,
+    backend_version: &str,
+    timeout_ms: u64,
+    native_ids: &[String],
+    path: &Path,
+    pin: &str,
+) -> Result<RequiredSet, Error> {
+    let validated = crate::fact_snapshot::validate(roots, path, pin)?;
+    prepare_internal(
+        roots,
+        backend_version,
+        timeout_ms,
+        native_ids,
+        Some(validated),
+    )
+}
+
+fn prepare_internal(
+    roots: &VerificationRoots,
+    backend_version: &str,
+    timeout_ms: u64,
+    native_ids: &[String],
+    captured: Option<crate::fact_snapshot::ValidatedSnapshot>,
+) -> Result<RequiredSet, Error> {
     validate_roots(roots)?;
     if !nonempty(backend_version) || timeout_ms == 0 {
         return Err(invalid(
@@ -281,7 +317,16 @@ pub fn prepare(
             "nonempty constraints/reviews and existing required native checks are mandatory",
         ));
     }
-    let (model, _) = crate::load_project_model_in_process(roots)?;
+    let producer_context_sha256 = captured
+        .as_ref()
+        .map(|c| c.receipt.producer_context_sha256.clone());
+    let provider_policy = captured
+        .as_ref()
+        .map(|c| c.snapshot.provider_policy.clone());
+    let model = match captured {
+        Some(c) => c.snapshot.model,
+        None => crate::load_project_model_in_process(roots)?.0,
+    };
     let used = model
         .constraints
         .values()
@@ -297,7 +342,12 @@ pub fn prepare(
         })
         .collect();
     Ok(RequiredSet {
-        schema_version: SET_SCHEMA.into(),
+        schema_version: if producer_context_sha256.is_some() {
+            SNAPSHOT_SET_SCHEMA
+        } else {
+            SET_SCHEMA
+        }
+        .into(),
         decision: "draft".into(),
         reviewer: None,
         rationale: None,
@@ -306,10 +356,12 @@ pub fn prepare(
         backend_version: backend_version.into(),
         timeout_ms,
         required_coverage,
+        producer_context_sha256,
+        provider_policy,
     })
 }
 
-fn read_set(path: &Path, pin: &str) -> Result<RequiredSet, Error> {
+fn read_set(path: &Path, pin: &str, snapshot_mode: bool) -> Result<RequiredSet, Error> {
     if !is_hash(pin) {
         return Err(invalid(
             "baseline SHA-256 must be 64 lowercase hexadecimal characters",
@@ -335,7 +387,16 @@ fn read_set(path: &Path, pin: &str) -> Result<RequiredSet, Error> {
     let approved = set.reviewer.as_ref().is_some_and(|r| {
         r.kind == "human_attestation" && nonempty(&r.identity) && nonempty(&r.approval_reference)
     });
-    if set.schema_version != SET_SCHEMA
+    if set.schema_version
+        != if snapshot_mode {
+            SNAPSHOT_SET_SCHEMA
+        } else {
+            SET_SCHEMA
+        }
+        || (snapshot_mode && !set.producer_context_sha256.as_deref().is_some_and(is_hash))
+        || (!snapshot_mode
+            && (set.producer_context_sha256.is_some() || set.provider_policy.is_some()))
+        || (snapshot_mode && set.provider_policy.as_ref().is_none_or(|p| p.is_empty()))
         || set.decision != "approved"
         || !approved
         || !set.rationale.as_deref().is_some_and(nonempty)
@@ -357,12 +418,48 @@ fn read_set(path: &Path, pin: &str) -> Result<RequiredSet, Error> {
 
 /// Assesses a protected snapshot using current read-only inputs and latest evidence.
 pub fn evaluate(roots: &VerificationRoots, path: &Path, pin: &str) -> Result<Report, Error> {
-    let set = read_set(path, pin)?;
+    let set = read_set(path, pin, false)?;
+    evaluate_internal(roots, set, pin, None)
+}
+
+pub fn evaluate_snapshot(
+    roots: &VerificationRoots,
+    path: &Path,
+    pin: &str,
+    snapshot_path: &Path,
+    snapshot_pin: &str,
+) -> Result<Report, Error> {
+    let set = read_set(path, pin, true)?;
+    let captured = crate::fact_snapshot::validate(roots, snapshot_path, snapshot_pin)?;
+    if set.producer_context_sha256.as_deref() != Some(&captured.receipt.producer_context_sha256) {
+        return Err(invalid("PRODUCER_CONTEXT_MISMATCH"));
+    }
+    if set.provider_policy.as_ref() != Some(&captured.snapshot.provider_policy) {
+        return Err(invalid(
+            "PROVIDER_POLICY_DRIFT: specification or extraction policy requires separate baseline approval",
+        ));
+    }
+    evaluate_internal(roots, set, pin, Some(captured))
+}
+
+fn evaluate_internal(
+    roots: &VerificationRoots,
+    set: RequiredSet,
+    pin: &str,
+    captured: Option<crate::fact_snapshot::ValidatedSnapshot>,
+) -> Result<Report, Error> {
     validate_roots(roots)?;
     let reviews = reviews::status(&roots.specification_root, &roots.state_root)?;
     let ids = set.scope.native_definitions.keys().cloned().collect();
     let scope_matches = snapshot(roots, &reviews, &ids)? == set.scope;
-    let (model, inputs) = crate::load_project_model_in_process(roots)?;
+    let fact_snapshot = captured.as_ref().map(|c| c.receipt.clone());
+    let (model, inputs) = match captured {
+        Some(c) => {
+            let inputs = c.inputs(roots);
+            (c.snapshot.model, inputs)
+        }
+        None => crate::load_project_model_in_process(roots)?,
+    };
     let mut diagnostics = Vec::new();
     if !scope_matches {
         diagnostics.push("REQUIRED_SCOPE_DRIFT: inventory, constraints, review heads or native definitions differ from the protected set".into());
@@ -508,7 +605,11 @@ pub fn evaluate(roots: &VerificationRoots, path: &Path, pin: &str) -> Result<Rep
         "PASS"
     };
     Ok(Report {
-        schema_version: REPORT_SCHEMA,
+        schema_version: if fact_snapshot.is_some() {
+            SNAPSHOT_REPORT_SCHEMA
+        } else {
+            REPORT_SCHEMA
+        },
         result,
         baseline_sha256: pin.into(),
         authority: "externally_pinned_set_and_protected_evidence_store",
@@ -518,5 +619,6 @@ pub fn evaluate(roots: &VerificationRoots, path: &Path, pin: &str) -> Result<Rep
         checks,
         diagnostics,
         does_not_prove,
+        fact_snapshot,
     })
 }

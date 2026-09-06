@@ -67,6 +67,14 @@ content-bound freshness and history. They neither alter inventory v1alpha1 nor
 turn a proof result into review approval. Incompatible changes require a new
 identifier. No release or package-version bump is implied by their implementation.
 
+The original [required-set gate](REQUIRED_GATE.md) retains its in-process-only
+`adrproof-required-set-v1alpha1` and `adrproof-gate-report-v1alpha1` contracts.
+Opt-in snapshot commands use v1alpha2 counterparts, with a required producer
+context and extraction-policy pin. [Fact snapshots](FACT_SNAPSHOTS.md) separately
+use `adrproof-fact-snapshot-v1alpha1`. No legacy set is silently upgraded; the
+provider wire/report v1 and proof-evidence formats remain unchanged. Snapshot
+pins attest a trusted producer artifact, not a new deductive-proof authority.
+
 - patch package releases preserve supported protocol and schema behavior;
 - adding support for a new protocol does not remove older supported protocols;
 - removing a protocol requires a documented deprecation cycle;

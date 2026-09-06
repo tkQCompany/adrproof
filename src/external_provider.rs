@@ -125,6 +125,29 @@ pub(crate) fn requires_execution(roots: &VerificationRoots) -> Result<bool, Erro
     Ok(!config.external_providers.is_empty())
 }
 
+/// Read-only execution entry points; transitive dependencies are a producer-policy duty.
+pub(crate) fn execution_inputs(roots: &VerificationRoots) -> Result<Vec<SemanticInput>, Error> {
+    let Some(path) = selected_config_path(roots) else {
+        return Ok(Vec::new());
+    };
+    let bytes = fs::read(&path).map_err(|source| Error::Io {
+        path: path.clone(),
+        source,
+    })?;
+    let config: Configuration = serde_json::from_slice(&bytes)
+        .map_err(|e| failure(DIAGNOSTIC_CONFIGURATION, e.to_string()))?;
+    let mut inputs = vec![semantic_input_for_path(roots, &path)?];
+    let mut ids = BTreeSet::new();
+    for definition in config.external_providers {
+        validate_definition(&definition, &mut ids)?;
+        inputs.push(semantic_input_for_path(
+            roots,
+            &resolve_executable(&path, &definition.executable)?,
+        )?);
+    }
+    Ok(inputs)
+}
+
 pub fn run_selected(
     roots: &VerificationRoots,
     selected: Option<&str>,

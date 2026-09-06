@@ -561,3 +561,411 @@ fn aliased_state_overlap_and_native_input_cycles_are_rejected() {
     write(&changed.source, &changed);
     assert!(gate::prepare(&f.roots, VERSION, 1000, &["unit".into()]).is_err());
 }
+
+const CONTEXT: &str = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+impl Fixture {
+    fn capture(&self) -> (PathBuf, String) {
+        let snapshot = adrproof::fact_snapshot::capture(&self.roots, CONTEXT).unwrap();
+        let path = self.root.join("facts.json");
+        write(&path, &snapshot);
+        let pin = evidence::fingerprint_bytes("snapshot", &fs::read(&path).unwrap()).sha256;
+        (path, pin)
+    }
+    fn snapshot_baseline(&self, path: &Path, pin: &str) -> (PathBuf, String) {
+        let mut set = gate::prepare_snapshot(&self.roots, VERSION, 1000, &[], path, pin).unwrap();
+        assert_eq!(set.schema_version, gate::SNAPSHOT_SET_SCHEMA);
+        set.decision = "approved".into();
+        set.reviewer = Some(reviewer());
+        set.rationale = Some("Synthetic snapshot baseline".into());
+        self.save(&set)
+    }
+    fn cargo(&self) {
+        fs::write(
+            self.roots.project_root.join("Cargo.toml"),
+            "[workspace]\nmembers = [\"crates/*\"]\nresolver = \"2\"\n",
+        )
+        .unwrap();
+        self.package("domain");
+        let output = Command::new("cargo")
+            .args(["generate-lockfile", "--offline"])
+            .current_dir(&self.roots.project_root)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+        self.adr(
+            &ADR.replace(
+                "bool boundary;",
+                "entity Package { domain }; relation package(Package);",
+            )
+            .replace("{ boundary; }", "{ package(domain); }"),
+        );
+    }
+    fn package(&self, name: &str) {
+        let path = self.roots.project_root.join("crates").join(name);
+        fs::create_dir_all(path.join("src")).unwrap();
+        fs::write(
+            path.join("Cargo.toml"),
+            format!("[package]\nname = \"{name}\"\nversion = \"0.1.0\"\nedition = \"2024\"\n"),
+        )
+        .unwrap();
+        fs::write(path.join("src/lib.rs"), "pub fn boundary() {}\n").unwrap();
+    }
+    fn provider(&self, mode: &str) {
+        let exe = self
+            .roots
+            .specification_root
+            .join(format!("fixture{}", std::env::consts::EXE_SUFFIX));
+        let out = Command::new("rustc")
+            .arg(Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/portable_provider.rs"))
+            .args(["--edition=2024", "-o"])
+            .arg(&exe)
+            .output()
+            .unwrap();
+        assert!(
+            out.status.success(),
+            "{}",
+            String::from_utf8_lossy(&out.stderr)
+        );
+        self.configure_provider(mode);
+        fs::write(self.roots.project_root.join("input.txt"), "component=api\n").unwrap();
+        self.adr(
+            &ADR.replace(
+                "bool boundary;",
+                "entity Component { api }; relation component(Component);",
+            )
+            .replace("{ boundary; }", "{ component(api); }"),
+        );
+    }
+    fn configure_provider(&self, mode: &str) {
+        let mut args = vec![mode.to_string()];
+        if mode == "mutate" {
+            args.push(
+                self.roots
+                    .project_root
+                    .join("unexpected.txt")
+                    .to_string_lossy()
+                    .into(),
+            );
+        }
+        write(
+            &self.roots.specification_root.join("adrproof.json"),
+            &json!({"external_providers":[{
+            "id":"portable-fixture","version":"1.0.0","protocol":"adrproof-external-provider-v1",
+            "executable":format!("fixture{}",std::env::consts::EXE_SUFFIX),"args":args,"timeout_ms":1000}]}),
+        );
+    }
+}
+
+#[test]
+fn cargo_snapshot_gate_uses_actual_metadata_without_executing_during_admission() {
+    let f = Fixture::new();
+    f.cargo();
+    f.approve();
+    f.verify(adrproof::Verdict::Sat);
+    let (snapshot, sp) = f.capture();
+    let (baseline, bp) = f.snapshot_baseline(&snapshot, &sp);
+    let raw: Value = serde_json::from_slice(&fs::read(&snapshot).unwrap()).unwrap();
+    assert!(
+        raw["model"]["facts"]
+            .as_object()
+            .unwrap()
+            .values()
+            .any(|f| f["relation"] == "package")
+    );
+    let before = tree(&f.root);
+    let out = f.cli(&[
+        "evaluate-snapshot",
+        "--snapshot",
+        snapshot.to_str().unwrap(),
+        "--snapshot-sha256",
+        &sp,
+        "--baseline",
+        baseline.to_str().unwrap(),
+        "--baseline-sha256",
+        &bp,
+        "--json",
+    ]);
+    assert_eq!(
+        out.status.code(),
+        Some(0),
+        "{}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let r: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(r["schema_version"], gate::SNAPSHOT_REPORT_SCHEMA);
+    assert_eq!(r["fact_snapshot"]["snapshot_sha256"], sp);
+    assert_eq!(tree(&f.root), before);
+    assert!(gate::evaluate(&f.roots, &baseline, &bp).is_err());
+    f.package("new_member");
+    assert!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &snapshot, &sp)
+            .unwrap_err()
+            .to_string()
+            .contains("SNAPSHOT_STALE")
+    );
+}
+
+#[test]
+fn snapshot_detects_added_deleted_modified_and_permission_inputs() {
+    for mutation in [
+        "add",
+        "delete",
+        "modify",
+        "empty-directory",
+        "config",
+        "lock",
+    ] {
+        let f = Fixture::new();
+        f.cargo();
+        let (path, pin) = f.capture();
+        match mutation {
+            "add" => {
+                fs::write(f.roots.project_root.join("new.txt"), "new").unwrap();
+            }
+            "delete" => {
+                fs::remove_file(f.roots.project_root.join("crates/domain/src/lib.rs")).unwrap()
+            }
+            "modify" => fs::write(
+                f.roots.project_root.join("crates/domain/Cargo.toml"),
+                "changed",
+            )
+            .unwrap(),
+            "empty-directory" => fs::create_dir(f.roots.project_root.join("empty")).unwrap(),
+            "config" => {
+                fs::create_dir(f.roots.project_root.join(".cargo")).unwrap();
+                fs::write(
+                    f.roots.project_root.join(".cargo/config.toml"),
+                    "[net]\noffline=true\n",
+                )
+                .unwrap();
+            }
+            _ => fs::write(f.roots.project_root.join("Cargo.lock"), "changed").unwrap(),
+        }
+        assert!(
+            adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_err(),
+            "{mutation}"
+        );
+    }
+}
+
+#[test]
+fn external_snapshot_rejects_stale_executable_configuration_and_preserves_partial_coverage() {
+    let f = Fixture::new();
+    f.provider("closed");
+    f.approve();
+    f.verify(adrproof::Verdict::Sat);
+    let (path, pin) = f.capture();
+    let (baseline, bp) = f.snapshot_baseline(&path, &pin);
+    assert_eq!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin)
+            .unwrap()
+            .result,
+        "PASS"
+    );
+    let executable = f
+        .roots
+        .specification_root
+        .join(format!("fixture{}", std::env::consts::EXE_SUFFIX));
+    let original = fs::read(&executable).unwrap();
+    fs::write(&executable, b"changed").unwrap();
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_err());
+    fs::write(executable, original).unwrap();
+    f.configure_provider("valid");
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_err());
+    f.verify(adrproof::Verdict::Sat);
+    let (path, pin) = f.capture();
+    assert!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin)
+            .unwrap_err()
+            .to_string()
+            .contains("PROVIDER_POLICY_DRIFT")
+    );
+    let (baseline, bp) = f.snapshot_baseline(&path, &pin);
+    let r = gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin).unwrap();
+    assert_eq!(r.result, "INCOMPLETE");
+    assert!(
+        r.diagnostics
+            .iter()
+            .any(|d| d.starts_with("COVERAGE_INCOMPLETE"))
+    );
+}
+
+#[test]
+fn failed_or_mutating_provider_never_emits_snapshot() {
+    let f = Fixture::new();
+    f.provider("malformed");
+    assert!(adrproof::fact_snapshot::capture(&f.roots, CONTEXT).is_err());
+    f.configure_provider("mutate");
+    assert!(
+        adrproof::fact_snapshot::capture(&f.roots, CONTEXT)
+            .unwrap_err()
+            .to_string()
+            .contains("CAPTURE_INPUT_DRIFT")
+    );
+    assert!(f.roots.project_root.join("unexpected.txt").exists());
+}
+
+#[test]
+fn snapshot_tampering_profile_mismatch_and_legacy_downgrade_fail_closed() {
+    let f = Fixture::new();
+    f.approve();
+    f.verify(adrproof::Verdict::Sat);
+    let (path, pin) = f.capture();
+    let (baseline, bp) = f.snapshot_baseline(&path, &pin);
+    let mut raw: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    raw["producer_context_sha256"] =
+        json!("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb");
+    write(&path, &raw);
+    assert!(
+        adrproof::fact_snapshot::validate(&f.roots, &path, &pin)
+            .unwrap_err()
+            .to_string()
+            .contains("PIN_MISMATCH")
+    );
+    let newpin = evidence::fingerprint_bytes("snapshot", &fs::read(&path).unwrap()).sha256;
+    assert!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &newpin)
+            .unwrap_err()
+            .to_string()
+            .contains("CONTEXT_MISMATCH")
+    );
+    let (legacy, lp) = f.baseline(&[]);
+    assert!(gate::evaluate_snapshot(&f.roots, &legacy, &lp, &path, &newpin).is_err());
+    raw["semantic_inputs"] = json!([]);
+    write(&path, &raw);
+    let newpin = evidence::fingerprint_bytes("snapshot", &fs::read(&path).unwrap()).sha256;
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &newpin).is_err());
+}
+
+#[test]
+fn snapshot_facts_cannot_substitute_for_missing_or_latest_failing_proof() {
+    let f = Fixture::new();
+    f.cargo();
+    f.approve();
+    let (path, pin) = f.capture();
+    let (baseline, bp) = f.snapshot_baseline(&path, &pin);
+    assert_eq!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin)
+            .unwrap()
+            .result,
+        "INCOMPLETE"
+    );
+    f.verify(adrproof::Verdict::Sat);
+    assert_eq!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin)
+            .unwrap()
+            .result,
+        "PASS"
+    );
+    f.verify(adrproof::Verdict::Unsat);
+    assert_eq!(
+        gate::evaluate_snapshot(&f.roots, &baseline, &bp, &path, &pin)
+            .unwrap()
+            .result,
+        "FAIL"
+    );
+}
+
+#[test]
+fn source_export_boundary_rejects_excluded_trees_and_escaping_semantic_inputs() {
+    let f = Fixture::new();
+    fs::create_dir(f.roots.project_root.join("target")).unwrap();
+    assert!(adrproof::fact_snapshot::capture(&f.roots, CONTEXT).is_err());
+    let f = Fixture::new();
+    let (path, _) = f.capture();
+    let mut raw: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    raw["semantic_inputs"][0]["source"] = json!("project:../outside.txt");
+    write(&path, &raw);
+    let pin = evidence::fingerprint_bytes("snapshot", &fs::read(&path).unwrap()).sha256;
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_err());
+}
+
+#[test]
+fn snapshot_relocation_and_state_changes_do_not_stale_facts() {
+    let mut f = Fixture::new();
+    f.cargo();
+    let (path, pin) = f.capture();
+    fs::create_dir_all(&f.roots.state_root).unwrap();
+    fs::write(f.roots.state_root.join("runner-log.txt"), "not semantic").unwrap();
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_ok());
+    let relocated = f.root.with_extension("snapshot-relocated");
+    fs::rename(&f.root, &relocated).unwrap();
+    f.root = relocated;
+    f.roots = VerificationRoots::explicit(
+        &f.root.join("project"),
+        &f.root.join("spec"),
+        &f.root.join("state"),
+    );
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &f.root.join("facts.json"), &pin).is_ok());
+    let fresh = adrproof::fact_snapshot::capture(&f.roots, CONTEXT).unwrap();
+    assert_eq!(
+        serde_json::to_value(fresh).unwrap(),
+        serde_json::from_slice::<Value>(&fs::read(f.root.join("facts.json")).unwrap()).unwrap()
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn snapshot_detects_permission_changes_and_rejects_child_aliases() {
+    use std::os::unix::fs::PermissionsExt;
+    let f = Fixture::new();
+    let (path, pin) = f.capture();
+    let file = f.roots.specification_root.join("architecture.md");
+    let mut mode = fs::metadata(&file).unwrap().permissions();
+    mode.set_mode(mode.mode() ^ 0o100);
+    fs::set_permissions(file, mode).unwrap();
+    assert!(adrproof::fact_snapshot::validate(&f.roots, &path, &pin).is_err());
+    std::os::unix::fs::symlink(
+        &f.roots.specification_root,
+        f.roots.project_root.join("alias"),
+    )
+    .unwrap();
+    assert!(adrproof::fact_snapshot::capture(&f.roots, CONTEXT).is_err());
+}
+
+#[test]
+fn snapshot_cannot_remove_obligations_even_with_a_new_transport_pin() {
+    let f = Fixture::new();
+    let (path, _) = f.capture();
+    let mut raw: Value = serde_json::from_slice(&fs::read(&path).unwrap()).unwrap();
+    raw["model"]["constraints"] = json!({});
+    write(&path, &raw);
+    let pin = evidence::fingerprint_bytes("snapshot", &fs::read(&path).unwrap()).sha256;
+    assert!(
+        adrproof::fact_snapshot::validate(&f.roots, &path, &pin)
+            .unwrap_err()
+            .to_string()
+            .contains("SPEC_MISMATCH")
+    );
+}
+
+#[test]
+fn snapshot_commands_require_complete_explicit_options() {
+    let f = Fixture::new();
+    for args in [
+        vec![
+            "prepare-snapshot",
+            "--backend-version",
+            VERSION,
+            "--timeout-ms",
+            "1000",
+            "--json",
+        ],
+        vec!["evaluate-snapshot", "--json"],
+        vec!["capture", "--producer-context-sha256", CONTEXT, "--json"],
+    ] {
+        let out = f.cli(&args);
+        assert_eq!(out.status.code(), Some(2));
+    }
+    let out = Command::new(env!("CARGO_BIN_EXE_adrproof"))
+        .args(["snapshot", "capture", "--json"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(2));
+    let output: Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(output["schema_version"], adrproof::fact_snapshot::SCHEMA);
+}

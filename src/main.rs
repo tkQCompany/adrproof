@@ -19,6 +19,7 @@ const COMMANDS: &[&str] = &[
     "inventory",
     "review",
     "gate",
+    "snapshot",
 ];
 
 fn main() {
@@ -98,7 +99,10 @@ fn print_help(command: Option<&str>) {
             "adrproof check [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--policy PATH] [--sarif PATH] [--json]"
         }
         Some("gate") => {
-            "adrproof gate <prepare --backend-version VERSION --timeout-ms N [--native-test ID]|evaluate --baseline PATH --baseline-sha256 SHA256> --project-root PATH --spec-root PATH --state-root PATH [--json]"
+            "adrproof gate <prepare|prepare-snapshot> --backend-version VERSION --timeout-ms N [--native-test ID] | <evaluate|evaluate-snapshot> --baseline PATH --baseline-sha256 SHA256; snapshot variants require --snapshot PATH --snapshot-sha256 SHA256; all require --project-root PATH --spec-root PATH --state-root PATH [--json]"
+        }
+        Some("snapshot") => {
+            "adrproof snapshot capture --producer-context-sha256 SHA256 --project-root PATH --spec-root PATH --state-root PATH [--json] (EXECUTES providers; external isolation required)"
         }
         Some("facts") => {
             "adrproof facts [ROOT] [--project-root PATH] [--spec-root PATH] [--state-root PATH] [--json] [--summary]"
@@ -289,16 +293,31 @@ fn parse_cli() -> Result<Cli, Error> {
 }
 
 fn real_main() -> Result<i32, Error> {
-    if std::env::args().nth(1).as_deref() == Some("gate") {
+    if matches!(
+        std::env::args().nth(1).as_deref(),
+        Some("gate" | "snapshot")
+    ) {
         let args = std::env::args().skip(2).collect::<Vec<_>>();
-        return match gate_command(&args) {
+        let capture_command = std::env::args().nth(1).as_deref() == Some("snapshot");
+        let schema = if capture_command {
+            adrproof::fact_snapshot::SCHEMA
+        } else if args.first().is_some_and(|a| a.ends_with("-snapshot")) {
+            adrproof::gate::SNAPSHOT_REPORT_SCHEMA
+        } else {
+            adrproof::gate::REPORT_SCHEMA
+        };
+        return match gate_command(&args, capture_command) {
             Ok(code) => Ok(code),
             Err(error) => {
                 if args.iter().any(|a| a == "--json") {
-                    println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                        "schema_version": adrproof::gate::REPORT_SCHEMA, "result": "ERROR", "exit_code": 2,
-                        "diagnostics": [error.to_string()]
-                    })).unwrap());
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "schema_version": schema, "result": "ERROR", "exit_code": 2,
+                            "diagnostics": [error.to_string()]
+                        }))
+                        .unwrap()
+                    );
                 } else {
                     eprintln!("ERROR — {error}");
                 }
@@ -405,7 +424,7 @@ fn real_main() -> Result<i32, Error> {
     }
 }
 
-fn gate_command(args: &[String]) -> Result<i32, Error> {
+fn gate_command(args: &[String], capture_command: bool) -> Result<i32, Error> {
     let invalid = |message: &str| Error::Diagnostic {
         path: "<cli>".into(),
         line: 1,
@@ -415,6 +434,15 @@ fn gate_command(args: &[String]) -> Result<i32, Error> {
     let action = args
         .first()
         .ok_or_else(|| invalid("gate requires prepare or evaluate"))?;
+    if (capture_command && action != "capture")
+        || (!capture_command
+            && !matches!(
+                action.as_str(),
+                "prepare" | "evaluate" | "prepare-snapshot" | "evaluate-snapshot"
+            ))
+    {
+        return Err(invalid("unsupported action for this command"));
+    }
     let mut options = BTreeMap::new();
     let mut native_ids = Vec::new();
     let mut json = false;
@@ -428,9 +456,13 @@ fn gate_command(args: &[String]) -> Result<i32, Error> {
             json = true;
         } else {
             let allowed = matches!(flag, "--project-root" | "--spec-root" | "--state-root")
-                || (action == "prepare"
+                || (matches!(action.as_str(), "prepare" | "prepare-snapshot")
                     && matches!(flag, "--backend-version" | "--timeout-ms" | "--native-test"))
-                || (action == "evaluate" && matches!(flag, "--baseline" | "--baseline-sha256"));
+                || (matches!(action.as_str(), "evaluate" | "evaluate-snapshot")
+                    && matches!(flag, "--baseline" | "--baseline-sha256"))
+                || (action.ends_with("-snapshot")
+                    && matches!(flag, "--snapshot" | "--snapshot-sha256"))
+                || (capture_command && flag == "--producer-context-sha256");
             if !allowed {
                 return Err(invalid("unsupported gate option or positional argument"));
             }
@@ -459,25 +491,52 @@ fn gate_command(args: &[String]) -> Result<i32, Error> {
         Path::new(required("--state-root")?),
     );
     match action.as_str() {
-        "prepare" => {
+        "capture" if capture_command => {
+            let snapshot =
+                adrproof::fact_snapshot::capture(&roots, required("--producer-context-sha256")?)?;
+            println!("{}", serde_json::to_string_pretty(&snapshot).unwrap());
+            Ok(0)
+        }
+        "prepare" | "prepare-snapshot" => {
             let timeout = required("--timeout-ms")?
                 .parse()
                 .map_err(|_| invalid("invalid timeout"))?;
-            let draft = adrproof::gate::prepare(
-                &roots,
-                required("--backend-version")?,
-                timeout,
-                &native_ids,
-            )?;
+            let draft = if action == "prepare-snapshot" {
+                adrproof::gate::prepare_snapshot(
+                    &roots,
+                    required("--backend-version")?,
+                    timeout,
+                    &native_ids,
+                    Path::new(required("--snapshot")?),
+                    required("--snapshot-sha256")?,
+                )?
+            } else {
+                adrproof::gate::prepare(
+                    &roots,
+                    required("--backend-version")?,
+                    timeout,
+                    &native_ids,
+                )?
+            };
             println!("{}", serde_json::to_string_pretty(&draft).unwrap());
             Ok(0)
         }
-        "evaluate" => {
-            let report = adrproof::gate::evaluate(
-                &roots,
-                Path::new(required("--baseline")?),
-                required("--baseline-sha256")?,
-            )?;
+        "evaluate" | "evaluate-snapshot" => {
+            let report = if action == "evaluate-snapshot" {
+                adrproof::gate::evaluate_snapshot(
+                    &roots,
+                    Path::new(required("--baseline")?),
+                    required("--baseline-sha256")?,
+                    Path::new(required("--snapshot")?),
+                    required("--snapshot-sha256")?,
+                )?
+            } else {
+                adrproof::gate::evaluate(
+                    &roots,
+                    Path::new(required("--baseline")?),
+                    required("--baseline-sha256")?,
+                )?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report).unwrap());
             } else {

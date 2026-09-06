@@ -79,6 +79,19 @@ jq -e \
     and .providers[0].provider.id == "component-manifest"' \
   "$test_root/provider.json" >/dev/null
 
+# Execute only the reviewed neutral example, in a disposable source copy.
+# This is a smoke fixture, not qualification of an OS-isolated consumer runner.
+cp -R examples/external-provider/project "$test_root/snapshot-project"
+cp -R examples/external-provider/spec "$test_root/snapshot-spec"
+cargo run --locked -- snapshot capture --project-root "$test_root/snapshot-project" \
+  --spec-root "$test_root/snapshot-spec" --state-root "$test_root/snapshot-state" \
+  --producer-context-sha256 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa \
+  --json > "$test_root/snapshot.json"
+jq -e '.schema_version == "adrproof-fact-snapshot-v1alpha1"
+  and (.tree | length > 0) and (.semantic_inputs | length > 0)
+  and (.provider_policy | length > 0) and (.model.facts | length > 0)' \
+  "$test_root/snapshot.json" >/dev/null
+
 if [[ -n $(git status --porcelain) ]]; then
   git status --short >&2
   echo "error: documented commands changed the clean checkout" >&2

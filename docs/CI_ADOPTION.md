@@ -11,11 +11,17 @@ is not a prerequisite.
 The experimental [read-only required-set gate](REQUIRED_GATE.md) composes current
 formalization reviews with current evidence under an externally pinned baseline.
 It is a bounded implementation, not a replacement for the integration contract
-below: Cargo/external-provider projects are currently unsupported, and
-scenario/model/correspondence checks are not included. Do not enable a consumer
+below. Its opt-in [snapshot path](FACT_SNAPSHOTS.md) supports Cargo/external facts
+only under an externally trusted producer and independently pinned current snapshot.
+The legacy path remains in-process only; scenario/model/correspondence checks are
+not included. Do not enable a consumer
 workflow merely because this command exists. Protect the baseline pin and stores
 outside the candidate/repair agent; never calculate the trusted pin from the
 candidate's baseline as part of accepting that same candidate.
+Snapshot transport pins must also come from the protected producer, not candidate
+artifacts. A declared producer-context digest is not proof of isolation: qualify
+the actual runner, immutable provider implementation/runtime, ambient-input policy
+and protected artifact transfer before admitting a real project's code.
 
 `provider check --json` tests configured provider conformance. It does not check
 architectural obligations. `check --json` combines the effective specification

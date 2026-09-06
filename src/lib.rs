@@ -12,6 +12,7 @@ pub mod cargo_facts;
 pub mod correspondence;
 pub mod evidence;
 pub mod external_provider;
+pub mod fact_snapshot;
 pub mod gate;
 pub mod inventory;
 pub mod native_test;

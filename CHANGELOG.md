@@ -10,6 +10,15 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Added
 
+- Experimental `snapshot capture` and opt-in `gate prepare-snapshot` /
+  `evaluate-snapshot`: separately versioned snapshots and v1alpha2 required-set /
+  gate reports. A trusted external producer executes Cargo/external providers;
+  admission verifies a protected snapshot pin, current complete input tree,
+  baseline-pinned execution context and extraction policy without executing tools.
+  Capture rejects changed source trees, escaping semantic inputs and unsupported
+  export entries. Existing v1alpha1 gate commands remain in-process only. The
+  implementation does not provide a sandbox or enable consumer CI.
+
 - Experimental `gate prepare` and read-only `gate evaluate`, with separately
   versioned required-set/report contracts. An independently pinned approved set
   protects inventory, all active constraints, exact review heads and selected
@@ -63,8 +72,9 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
   macOS/Windows coverage and CodeQL passed for `b321057`; the support matrix
   records exact evidence. Inventory regressions subsequently passed on both runners
   for `75b2464`, with CodeQL successful too. Formalization-review regressions and
-  CodeQL then passed for `0cfdef9`. Required-set gate regressions are scheduled on
-  both runners and await their own post-push result.
+  CodeQL then passed for `0cfdef9`. Required-set gate regressions and CodeQL passed
+  for `1042a56`. Snapshot controls extend the portable gate suite and await their
+  own post-push CI; no real isolated runner is qualified by fixture success.
 - CI adoption guidance separates provider conformance from an architectural
   gate, with explicit input pins, negative controls, and staged approval.
 - Beta and isolated-pilot review templates, reproducibility issue reporting,

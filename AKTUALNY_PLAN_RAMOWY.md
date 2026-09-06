@@ -144,7 +144,8 @@ specific implementation and verification references; until then leave unchecked.
 
 - [ ] P37 — Evaluate an explicit required check set with one unambiguous outcome.
   Read-only ADRLogic/SQL and selected native-test composition is implemented;
-  this is not yet an all-adapter or consumer-CI gate.
+  opt-in pinned snapshots now cover executed Cargo/external facts. This is not
+  yet an all-adapter or qualified consumer-CI gate.
 - [ ] P38 — Prioritize actionable diagnostics over raw backend output.
 - [ ] P39 — Support reviewed exceptions/migrations without rewriting failures.
 - [ ] P40 — Preserve project/spec/state separation and clarify its safety boundary.
@@ -358,3 +359,56 @@ this file. Push/release remain maintainer actions.
   isolated execution or snapshot validation. Preserve the read-only gate contract;
   do not import cached provider facts as current on trust alone. Keep P36/P37 open
   for broader adapter composition and external trust-boundary qualification.
+
+### Implementation checkpoint 2026-09-06 — executed-fact snapshot admission
+
+- P36/P37 continuation on pushed `1042a56`: full CI, macOS/Windows gate steps and
+  CodeQL succeeded; exact links are recorded in
+  [supported platforms](docs/SUPPORTED_PLATFORMS.md).
+- Defined [the snapshot contract](docs/FACT_SNAPSHOTS.md) before implementation.
+  `snapshot capture` explicitly executes existing providers in a caller-supplied
+  trusted environment. `gate prepare-snapshot/evaluate-snapshot` never execute
+  providers: they require an independently pinned snapshot and verify complete
+  current project/spec trees plus semantic input identities and fingerprints.
+  Capture compares trees before/after execution and fails on changes; it is not
+  a sandbox or an atomic filesystem snapshot.
+- Snapshot schema `adrproof-fact-snapshot-v1alpha1` stores the existing normalized
+  Project Intent Model, provenance, scoped coverage, complete tree and semantic
+  fingerprints. Decisions/constraints are checked against fresh in-process
+  lowering; current proof evidence still must match generated SMT and relevant
+  inputs. A successful capture is not proof PASS.
+- Opt-in required-set/report v1alpha2 pins the producer-context digest and
+  extraction policy separately from mutable project data. The entire spec tree,
+  external configuration and entry-point executables are protected: an agent
+  cannot replace its extractor and reuse the old baseline merely by generating
+  a fresh snapshot/proof. The v1alpha1 gate and published provider/report/ledger
+  contracts are unchanged; old baselines are not implicitly upgraded.
+- Local verification: 11 new controls extend the gate suite to 29 tests; all
+  179 tests passed with the locked offline all-target suite, as did formatting
+  and Clippy with warnings denied. Tests exercise real Cargo metadata in neutral
+  source exports, a small native provider, PATH-empty admission, added workspace
+  members/files/directories/configuration, changed lockfiles/manifests/executables,
+  permission changes, malformed or mutating providers, partial coverage, missing
+  and latest failing proof, pin/profile/policy drift, obligation substitution,
+  legacy downgrade attempts, explicit CLI errors, aliases and relocation. Provider
+  process fixtures are not real-verifier qualification; proof records used in
+  gate-composition controls remain explicitly synthetic.
+- Source-export limits are explicit: disjoint roots, no child aliases/special
+  files or `.git`/`target`/`.adrproof`, at most 128 directory levels, 100,000
+  entries and 256 MiB of source bytes. No exclusion mechanism can silently narrow
+  the tree. These are safety bounds, not a large-project performance claim.
+- The producer-context digest is an external attestation, not measured isolation.
+  Trusted transport of the per-capture pin, immutable runner/toolchain/provider
+  dependencies, no ambient/state-dependent semantics and root-relocation
+  invariance still require actual runner/provider qualification. Arbitrary
+  transitive code loading from mutable project files must be prohibited there.
+  Hashes alone neither authenticate the producer nor prove execution correctness.
+- Snapshot controls are part of the existing portable gate CI job; their own
+  post-push CI is pending. No consumer CI, private integration, real approval,
+  release/tag or package publication was performed.
+- Next bounded step after CI: a neutral, reproducible isolated-producer recipe
+  and review packet defining the execution profile, immutable source export,
+  restricted writable locations/ambient inputs and protected snapshot transfer.
+  Test tampered producer/context/transport independently. Do not enable any
+  consumer workflow until its owner/controller accepts that concrete boundary.
+  P36/P37 remain open for that qualification and other evidence adapters.

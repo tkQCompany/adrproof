@@ -25,7 +25,10 @@ human attestations to content hashes and assess them independently of proof
 freshness. An experimental [protected required-set gate](docs/REQUIRED_GATE.md)
 now combines current reviews and current required evidence without running tools.
 Its first slice supports ADRLogic/static SQL and selected imported native tests;
-Cargo/external-provider projects are explicitly unsupported. Trusted baseline pins,
+Cargo/external-provider projects can use the opt-in [fact snapshot path](docs/FACT_SNAPSHOTS.md):
+a trusted isolated producer executes extraction and the gate validates its pinned
+snapshot without executing tools. Legacy gate commands remain in-process only.
+Trusted baseline and snapshot pins,
 reviewer authentication and evidence-store protection remain integration duties.
 Implementation work follows the
 [current framework plan](AKTUALNY_PLAN_RAMOWY.md) and its normative ADRs.

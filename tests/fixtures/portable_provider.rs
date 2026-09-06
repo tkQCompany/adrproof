@@ -15,7 +15,17 @@ fn main() {
         "oversized" => {
             std::io::stdout().write_all(&vec![b'x'; 8 * 1024 * 1024 + 1]).unwrap();
         }
-        "valid" => print!(
+        "valid" | "closed" | "mutate" => {
+            if mode == "mutate" {
+                std::fs::write(std::env::args().nth(2).expect("fixture mutation path"), "mutated").unwrap();
+            }
+            let world = if mode == "valid" { "partial" } else { "closed" };
+            let statement = if mode == "valid" {
+                "the fixture reports one recognized component without a completeness claim"
+            } else {
+                "synthetic fixture enumerates the singleton component domain; not a real extractor qualification"
+            };
+            print!(
             r#"{{
   "schema_version":"adrproof-external-provider-response-v1",
   "provider":{{"id":"portable-fixture","version":"1.0.0"}},
@@ -36,15 +46,16 @@ fn main() {
   "coverage":[{{
     "relation":"component",
     "provider":"portable-fixture",
-    "world":"partial",
+    "world":"{world}",
     "scope":{{"kind":"global"}},
     "qualifiers":{{"fixture":"portable"}},
-    "statement":"the fixture reports one recognized component without a completeness claim",
+    "statement":"{statement}",
     "diagnostics":[]
   }}],
   "diagnostics":[]
 }}"#
-        ),
+        );
+        },
         other => panic!("unknown fixture mode: {other}"),
     }
 }

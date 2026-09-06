@@ -35,8 +35,12 @@ and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34036762711).
 The formalization-review suite also passed on both portable runners for
 `0cfdef9672c4d98f0411b69cc5fb40e94c2894dd`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34038211681)
 and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34038211728).
-The new required-set gate suite is configured for both runners, but awaits its
-own post-push remote result. Earlier CI does not qualify the new gate suite.
+The required-set gate suite passed on both portable runners for
+`1042a56a6c6458cbfc666df18f2e8514d7d75033`: [CI](https://github.com/tkQCompany/adrproof/actions/runs/34039678722)
+and [CodeQL](https://github.com/tkQCompany/adrproof/actions/runs/34039678829).
+Snapshot controls now extend that suite using actual Cargo metadata and a native
+fixture provider. Their own post-push result is required; earlier CI does not
+qualify those additions or a real isolated producer environment.
 
 ## Toolchain and external programs
 

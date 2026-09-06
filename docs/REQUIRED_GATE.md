@@ -66,11 +66,17 @@ coverage; ERROR/2 for malformed input, wrong pin, unsupported execution or I/O.
 ERROR takes precedence over FAIL, and FAIL over INCOMPLETE. Individual results
 retain freshness and evidence identity; no fallback to older passing evidence.
 
-This first implementation supports in-process ADRLogic and static SQL facts,
+The original v1alpha1 commands support in-process ADRLogic and static SQL facts,
 plus imported native-test results. Cargo manifests or configured external
 providers are explicitly unsupported: evaluating their freshness today may run
 subprocesses. Neither Cargo, external providers, tests nor Z3 run in this gate.
 Existing commands and provider/report/ledger formats are unchanged.
+
+An opt-in [fact snapshot path](FACT_SNAPSHOTS.md) now supports executed facts via
+separate `prepare-snapshot/evaluate-snapshot` commands and v1alpha2 gate formats.
+It requires an independently pinned capture from a trusted isolated producer,
+a baseline-pinned producer context and extraction policy, and a complete current
+source-tree match. It does not change the v1alpha1 commands' execution boundary.
 
 PASS means only consistency of the selected formal obligations with current
 available evidence, plus the explicitly selected imported checks. It is not
