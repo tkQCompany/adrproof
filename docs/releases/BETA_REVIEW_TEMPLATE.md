@@ -3,21 +3,28 @@
 Status: **NOT EVALUATED**. Copy and fill this record; placeholders are not PASS.
 This template does not authorize publication.
 
-## Identities and observation window
+## Identities and maturity assessment
 
 - Reviewer and review timestamp (UTC): TBD
 - Public beta publication timestamp and release URL: TBD
-- Earliest gate: publication plus fourteen calendar days, no earlier than
-  2026-09-14 for the planned 0.2 gate
+- Sustained-use scope, project changes exercised, and evidence references: TBD
+- User and approved integration-controller assessment of practical usefulness: TBD
+- Specification-language syntax/semantics maturity and migration expectations: TBD
 - Beta tag, full commit and tree: TBD
 - Proposed stable source commit and tree: TBD
 - Compatible change review since beta: TBD
+
+There is no calendar deadline or minimum waiting period. Record what actual use
+has established; elapsed time, a single pilot, green CI, or absence of community
+reports cannot substitute for a maturity assessment.
 
 ## Evidence
 
 | Gate | Observed result / exact reference | Decision |
 | --- | --- | --- |
-| Observation period elapsed | TBD | NOT EVALUATED |
+| Sustained-use benefits, useful/misleading findings, missed violations and limitations reviewed | TBD | NOT EVALUATED |
+| Specification-language syntax/semantics and rule-maintenance costs reviewed | TBD | NOT EVALUATED |
+| Compatibility and migration expectations for specification evolution documented | TBD | NOT EVALUATED |
 | Protocol/report v1 compatibility | TBD | NOT EVALUATED |
 | Open issues/PRs and release blockers triaged | TBD | NOT EVALUATED |
 | Isolated repeated pilot on approved pins | TBD | NOT EVALUATED |

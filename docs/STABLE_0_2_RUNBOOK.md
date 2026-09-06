@@ -4,10 +4,21 @@ This runbook turns the stable-release gate into an ordered, auditable procedure.
 It does not authorize a release: the maintainer owns the GO decision, push, tag,
 GitHub Release, and attached artifacts. ADRProof is never published to crates.io.
 
+Stable promotion has no calendar deadline or minimum waiting period. It depends
+on demonstrated usefulness and specification-language maturity, not just green
+tests or elapsed time. No community participation is assumed, and absence of
+reported defects is not evidence of successful use. Development and separately
+approved integration/CI adoption may continue before stable promotion.
+
 ## Preconditions
 
-1. At least fourteen calendar days have elapsed since `0.2.0-beta.1` was
-   published. The earliest planned gate date is 2026-09-14.
+1. The maintainer has accepted a maturity review based on sustained use across
+   real project changes. It records practical benefits, useful and misleading
+   CI findings, missed violations, specification limitations, and rule-maintenance
+   costs reported by the user and approved integration controllers. The syntax
+   and semantics of supported specification languages are mature enough for a
+   compatibility commitment, with evolution and migration expectations documented.
+   A single successful pilot or a green test suite is not sufficient evidence.
 2. No release-blocking defect is open against external-provider protocol v1,
    provider-check report v1, its diagnostic families, or supported portability
    behavior.
@@ -82,8 +93,7 @@ to obtain a release.
 3. Record the public CI run, tag target, archive digest, repeated-pilot result,
    known limitations, and GO decision in the sanitized release record.
 4. Close the `0.2.0` milestone.
-5. Disable the beta-observation automation after its final report is accepted.
-6. Open the `0.2.x` maintenance line. Protocol v1 and report v1 remain frozen;
+5. Open the `0.2.x` maintenance line. Protocol v1 and report v1 remain frozen;
    incompatible machine-readable changes proceed under a new version.
 
 At no point does this procedure run `cargo publish` or upload to crates.io.

@@ -38,6 +38,14 @@ review surface.
 
 ## Stable 0.2 gate
 
+- [ ] The maintainer has accepted evidence of usefulness from sustained use
+  across real project changes, including approved integration/CI feedback.
+- [ ] Specification-language syntax and semantics are mature enough for a
+  compatibility commitment; limitations and migration expectations are recorded.
+- [ ] The maturity review covers useful/misleading findings, missed violations
+  and rule-maintenance costs, not elapsed time or absence of community reports.
+- [ ] A repeated isolated pilot on controller-approved commit pins has passed;
+  it supplements, rather than replaces, sustained-use evidence.
 - [ ] No release-blocking protocol defect remains.
 - [ ] Only compatible fixes were made after beta.
 - [ ] The source archive is generated twice from the release tag with

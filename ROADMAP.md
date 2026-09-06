@@ -50,9 +50,20 @@ into ADRProof.
   may still change in response to conformance and pilot findings;
 - **beta**: protocol v1, its schemas, exit behavior, and machine-readable
   diagnostics are frozen; only compatible fixes are accepted;
-- **stable**: the portable conformance suite passes on all supported platforms,
-  the private pilot is complete, documentation works from a clean checkout, and
-  no release-blocking protocol defect remains.
+- **stable**: sustained use across real project changes demonstrates practical
+  value, and the syntax and semantics of the supported specification languages
+  are mature enough for a compatibility commitment. The portable conformance
+  suite must also pass on all supported platforms, a repeated private pilot must
+  pass, documentation must work from a clean checkout, and no release blocker
+  may remain. Technical readiness alone does not establish product maturity.
+
+There is no calendar deadline or minimum waiting period for stable promotion.
+Elapsed time and absence of community reports are not acceptance evidence.
+Assessment relies on maintainer experience and feedback from approved consuming
+project integrations: useful findings, missed violations, false alarms,
+specification limitations, and the cost of maintaining rules across changes.
+Specification-language maturity is distinct from the already frozen provider
+protocol and report contracts; those compatibility commitments remain in force.
 
 Package versions and protocol versions are independent. ADRProof may release a
 new package without changing the provider protocol. An incompatible protocol
@@ -91,11 +102,11 @@ imply that a consuming project has enabled CI or that stable has been released.
 - [ ] Obtain consuming-controller approval of an exact repeat-pilot pin set,
   required clauses, coverage and negative controls; preserve historical locks.
 - [ ] Execute the isolated repeat pilot and review a sanitized result.
-- [ ] Complete the beta observation window and stable-release gates. The beta
-  was published at 2026-08-31 20:17:59 UTC; fourteen days elapse on
-  2026-09-14 at 20:17:59 UTC, not at the start of that day.
-- [ ] Prepare the stable release candidate, then hand push/tag/publication to
-  the maintainer following the release runbook.
+- [ ] Accumulate and review sustained-use evidence, including consuming-project
+  CI feedback and specification-language limitations, before deciding maturity.
+- [ ] Only after the maintainer accepts that maturity assessment and the
+  technical gates, prepare the stable release candidate and hand
+  push/tag/publication to the maintainer following the release runbook.
 - [ ] Obtain separate approval for a private shadow CI job; keep actual failed
   verification results visible without making the check required yet.
 - [ ] Evaluate repeatability, rule-negative controls, artifact handling and
@@ -105,8 +116,9 @@ imply that a consuming project has enabled CI or that stable has been released.
 
 See [`docs/CI_ADOPTION.md`](docs/CI_ADOPTION.md) for the adoption contract and
 [`docs/STABLE_0_2_RUNBOOK.md`](docs/STABLE_0_2_RUNBOOK.md) for the stable gate.
-CI preparation and approved manual pilots may proceed during beta observation;
-neither requires an incompatible protocol/report extension.
+Development, approved manual pilots and separately approved CI adoption may
+proceed during prerelease use; none requires waiting for a stable label or
+changing the frozen protocol/report contracts.
 
 ## Later candidates
 

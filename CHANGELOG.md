@@ -21,11 +21,14 @@ defined separately in [`docs/VERSIONING.md`](docs/VERSIONING.md).
 
 ### Planned
 
-- Reproducible stable `0.2.0` release artifacts after the beta observation
-  period.
+- Reproducible stable `0.2.0` release artifacts only after an accepted maturity
+  assessment and the technical release gates; no calendar deadline is set.
 
 ### Changed
 
+- Stable-release readiness now requires evidence from sustained real use and
+  mature specification-language syntax and semantics instead of a timed beta
+  waiting period. Published protocol/report v1 compatibility remains unchanged.
 - Portable CI now includes library and command-help regressions; POSIX execution
   fixtures are explicitly separated from platform-neutral core tests. Expanded
   macOS/Windows coverage awaits its first remote run.
